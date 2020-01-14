@@ -1,4 +1,4 @@
-from RuleCreator import RuleCreator
+from ModelEstimation import RuleCreator
 from simpfulfier import SimpfulConverter
 
 class SugenoFISBuilder(object):
