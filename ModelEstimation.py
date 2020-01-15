@@ -4,12 +4,12 @@ import numpy.matlib
 from scipy.spatial.distance import cdist
 from random import randint
 
-class RuleCreator(object):
-    def __init__(self, datapath, nrclus,varnames=None,m=2,max_it=1000,error=0.005,seed=None,shape='gauss2',global_fit=1):
+class ModelCreator(object):
+    def __init__(self, datapath, nrclus,varnames=None,m=2,max_it=1000,error=0.005,seed=None,mfshape='gauss2',global_fit=1):
         self.data=np.loadtxt(datapath,delimiter=',')
         self.nrclus=nrclus
         self.varnames=varnames
-        self.shape=shape
+        self.mfshape=mfshape
 
         # The first row of the data contains the variable names
         self.varnames=self.data[0,:]
@@ -19,16 +19,16 @@ class RuleCreator(object):
         self.dataY=self.data[:,-1]
         
         # Split the data in a training and test set
-        self.xtrn, self.ytrn, self.xtst, self.ytst = splitTrainTest(dataX,dataY, train_perc=0.75)
-        
+        self.xtrn, self.ytrn, self.xtst, self.ytst = self.splitTrainTest(self.dataX,self.dataY)
+       
         # Cluster the data with FCM
-        _,self.partitionmatrix,_= self.fcm(self.xtrn,nrclus,m,max_it,error,seed)
+        _,self.partitionmatrix,_= self.fcm(np.concatenate((self.xtrn,self.ytrn.reshape(len(self.ytrn),1)),axis=1),nrclus,m,max_it,error,seed)
         
         # Estimate the antecedent sets of the fuzzy rules
-        self.MFs = self.determineMF(self.xtrn,self.partitionmatrix,shape)
+        self.mfs = self.determineMF(self.xtrn,self.partitionmatrix,mfshape)
         
         # Estimate the consequent parematers of the fuzzy rules
-        self.Cons = self.suglms(self.xdata,self.ydata,self.partitionmatrix,global_fit)
+        self.cons = self.suglms(self.xtrn,self.ytrn,self.partitionmatrix,global_fit)
 
     def determineMF(self,x,f,shape='gauss2'):
         mflist=[]
@@ -106,7 +106,7 @@ class RuleCreator(object):
         x=xval;
         return mf, x
     
-    def fitMF(self,x,mf,shape='gauss2'):
+    def fitMF(self,x,mf,mfshape='gauss2'):
         # Fits parametrized membership functions to a set of pointwise defined 
         # membership values.
         #
@@ -120,14 +120,14 @@ class RuleCreator(object):
         # param: matrix of membership function parameters
         
     
-        if shape == 'gauss':
+        if mfshape == 'gauss':
             # Determine initial parameters
             mu = sum(x * mf) / sum(mf)
             sig = np.sqrt(sum(mf*(x - mu)**2))
             # Fit parameters to the data using least squares
             param, _ = curve_fit(self.gaussmf, x, mf, p0 = [1, mu, sig])
        
-        elif shape == 'gauss2':
+        elif mfshape == 'gauss2':
             # Determine initial parameters
             mu1 = x[mf>=0.95][0]
             mu2 = np.flipud(x[mf>=0.95])[0]
@@ -138,7 +138,7 @@ class RuleCreator(object):
             # Fit parameters to the data using least squares
             param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2])
             
-        elif shape == 'sigmf':
+        elif mfshape == 'sigmf':
             # Determine initial parameters
             if np.argmax(mf)-np.argmin(mf) > 0:         # if sloping to the right
                 c = x[mf>=0.5][0]
@@ -149,7 +149,7 @@ class RuleCreator(object):
             # Fit parameters of the function to the data using non-linear least squares           
             param, _ = curve_fit(self.sigmf, x, mf, p0 = [c, s])
         
-        return shape, param
+        return mfshape, param
         
     def gaussmf(self,x, mu, sigma, a=1):
         # x:  (1D array)
@@ -341,8 +341,8 @@ class RuleCreator(object):
     	u = ut.T
     	return centers, u, jm
     
-    def splitTrainTest(dataX,dataY, train_perc=0.75):
-        universe=set(range(0,dataX.shape[0]))
+    def splitTrainTest(self,dataX,dataY, train_perc=0.75):
+        universe=set(range(0,np.shape(dataX)[0]))
         trn=np.random.choice(dataX.shape[0], int(round(train_perc*dataX.shape[0])), replace=False)
         tst=list(universe-set(trn))
         
@@ -353,7 +353,3 @@ class RuleCreator(object):
 
         return xtrn, ytrn, xtst, ytst
     
-if __name__=='__main__':
-    bla=RuleCreator(datapath='C:/Users/20115284/Desktop/FitMF/data/dataset6_withlabels', nrclus=2,varnames=['var1','var2'])
-    
-    print(bla.MFs)
