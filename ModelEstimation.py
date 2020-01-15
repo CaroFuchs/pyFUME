@@ -353,3 +353,6 @@ class ModelCreator(object):
 
         return xtrn, ytrn, xtst, ytst
     
+if __name__=='__main__':
+    
+    pass
