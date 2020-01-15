@@ -352,6 +352,10 @@ class ModelCreator(object):
         ytst=dataY[tst]
 
         return xtrn, ytrn, xtst, ytst
+
+    def evaluate_sample(self, sample):
+        pass
+
     
 if __name__=='__main__':
     

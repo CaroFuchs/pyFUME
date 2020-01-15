@@ -34,7 +34,8 @@ class SimpfulConverter(object):
     def generate_object(self):
         code = self.generate_code()
         exec(code, globals()) 
-        #self._fuzzyreasoner = FR
+        from copy import deepcopy
+        self._fuzzyreasoner = deepcopy(FR)
 
     def generate_code(self, use_main=False):
 
