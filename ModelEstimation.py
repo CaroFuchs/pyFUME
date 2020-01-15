@@ -354,6 +354,5 @@ class RuleCreator(object):
         return xtrn, ytrn, xtst, ytst
     
 if __name__=='__main__':
-    bla=RuleCreator(datapath='C:/Users/20115284/Desktop/FitMF/data/dataset6_withlabels', nrclus=2,varnames=['var1','var2'])
     
-    print(bla.MFs)
+    pass
