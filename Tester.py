@@ -9,7 +9,7 @@ class SugenoFISTester(object):
         self._data_to_test = test_data
         self._golden_standard = golden_standard
 
-    def calculate_MSE(self, variable_names, list_of_outputs=['OUTPUT']):
+    def calculate_RMSE(self, variable_names, list_of_outputs=['OUTPUT']):
         # read names
         RMSE = defaultdict(float)
         
@@ -17,6 +17,7 @@ class SugenoFISTester(object):
             for i, variable in enumerate(variable_names):
                 self._model_to_test.set_variable(variable, sample[i])
             result = self._model_to_test.Sugeno_inference()
+            print(result)
 
             for j, output in enumerate(list_of_outputs):
                 RMSE[output] += (result[output] - self._golden_standard[j])**2

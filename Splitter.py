@@ -1,10 +1,12 @@
 import numpy as np
 
 class DataSplitter(object):
-    def __init__(self, datapath):
-        self.data=np.loadtxt(datapath,delimiter=',')
-        self.dataX=self.data[:,0:-1]
-        self.dataY=self.data[:,-1]
+    def __init__(self, dataX, dataY):
+#        self.data=np.loadtxt(datapath,delimiter=',')
+#        self.dataX=self.data[:,0:-1]
+#        self.dataY=self.data[:,-1]
+        self.dataX=dataX
+        self.dataY=dataY
         
     def holdout(self,dataX,dataY, percentage_training=0.75,seed=None):
         universe=set(range(0,np.shape(dataX)[0]))

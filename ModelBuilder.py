@@ -1,4 +1,3 @@
-from ModelEstimation import ModelCreator
 from simpfulfier import SimpfulConverter
 
 class SugenoFISBuilder(object):

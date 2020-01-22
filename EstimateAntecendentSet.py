@@ -100,20 +100,27 @@ class AntecedentEstimator(object):
         if mf_shape == 'gauss':
             # Determine initial parameters
             mu = sum(x * mf) / sum(mf)
-            sig = np.sqrt(sum(mf*(x - mu)**2))
+            sig = np.mean(np.sqrt(-((x-mu)**2)/(2*np.log(mf))))
+            
             # Fit parameters to the data using least squares
-            param, _ = curve_fit(self.gaussmf, x, mf, p0 = [1, mu, sig])
+#            print('mu=', mu, 'sig=', sig)
+            param, _ = curve_fit(self.gaussmf, x, mf, p0 = [1, mu, sig],maxfev = 10000)
        
         elif mf_shape == 'gauss2':
             # Determine initial parameters
             mu1 = x[mf>=0.95][0]
-            mu2 = np.flipud(x[mf>=0.95])[0]
+            mu2 = x[mf>=0.95][-1]
             xmf =x[mf>=0.5]
-            sig1 = np.divide(mu1 - xmf[0],np.sqrt(2*np.log(2)));
-            sig2 = np.divide(np.flipud(xmf)[0]-mu2,np.sqrt(2*np.log(2)));
+            sig1 = (mu1 - xmf[0])/(np.sqrt(2*np.log(2)))
+            sig2 = (xmf[-1]-mu2)/(np.sqrt(2*np.log(2)))
+            if sig1==0.0:
+                sig1=0.1
+            if sig2==0.0:
+                sig2=0.1
             
             # Fit parameters to the data using least squares
-            param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2])
+            print('mu1',mu1,'sig1',sig1,'mu2',mu2,'sig2',sig2)
+            param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], maxfev=1000)
             
         elif mf_shape == 'sigmf':
             # Determine initial parameters
