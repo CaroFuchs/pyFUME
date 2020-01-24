@@ -12,8 +12,52 @@ class Clusterer(object):
 		self.data=np.concatenate((self.x_train,self.y_train.reshape(len(self.y_train),1)),axis=1)
 		self.nr_clus = nr_clus
 
-	def fcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005):
-		#data: 2d array, size (N, S). N is the number of instances; S is the number of variables.
+	def cluster(self, method="fcm", **kwargs):
+		try:
+			m = kwargs["m"]
+		except:
+			m = 2
+
+		if method == "fcm":
+			try:
+				max_iter = kwargs["max_iter"]
+			except:
+				max_iter = 1000
+			try:
+				error = kwargs["error"]
+			except:
+				error = 0.005
+			try:
+				seed = kwargs["seed"]
+			except:
+				seed = None
+
+			centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=m, max_iter=max_iter, error=error)
+
+		elif method == "fstpso":
+			try:
+				max_iter = kwargs["max_iter"]
+			except:
+				max_iter=100
+			try:
+				n_particles = kwargs["n_particles"]
+			except:
+				n_particles = None
+			try:
+				path_fit_dump = kwargs["path_fit_dump"]
+			except:
+				path_fit_dump = None
+			try:
+				path_sol_dump = kwargs["path_sol_dump"]
+			except:
+				path_sol_dump = None
+
+			centers, partition_matrix, jm = self._fstpso(data=self.data, n_clusters=self.nr_clus, max_iter=max_iter, n_particles=n_particles, m=m, path_fit_dump=path_fit_dump, path_sol_dump=path_sol_dump)
+
+		return centers, partition_matrix, jm
+
+	def _fcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005, seed=None):
+		#data: 2d array, size (N, S). N is the number of instances; S is the number of variables
 		#n_clusters: number of clusters
 		#m: fuzzy clustering coefficient
 		#max_it: maximum number of iterations, default=1000
@@ -23,6 +67,8 @@ class Clusterer(object):
 		n_instances = data.shape[0]
 		
 		#randomly initaliaze u
+		if seed != None:
+			np.random.seed(seed=seed)
 		u = np.random.rand(n_instances, n_clusters)
 		u = np.fmax(u, np.finfo(np.float64).eps)
 		ut = u.T
@@ -58,10 +104,11 @@ class Clusterer(object):
 		return centers, partition_matrix, jm
 	
 	
-	def fstpso_clustering(data, n_clusters, max_iter, n_particles=None, m=2, path_fit_dump=None, path_sol_dump=None):
+	def _fstpso(self, data, n_clusters, max_iter=100, n_particles=None, m=2, path_fit_dump=None, path_sol_dump=None):
 		#data: 2d array, size (N, S). N is the number of instances; S is the number of variables
 		#n_clusters: number of clusters
-		#max_iter: number of maximum iterations of FST-PSO
+		#max_iter: number of maximum iterations of FST-PSO, default is 100
+		#n_particles: number of particles in the swarm, if None it is automatically set by FST-PSO
 		#m: fuzzy clustering coefficient
 		#path_fit_dump: path to the file where the best fitness score at each iteration will be dumped
 		#path_sol_dump: path to the file where the best solution at each iteration will be dumped
@@ -128,10 +175,10 @@ class Clusterer(object):
 		for i in range(np.shape(um)[0]):
 			for j in range(np.shape(um)[1]):
 				um[i][j] = np.sum(	np.power(	np.divide(	dist[i][j],dist[i])	,	float(1/(m-1))	)	)
-		u = np.reciprocal(um)
+		partition_matrix = np.reciprocal(um)
 
 		#final fitness value
 		jm =  result[1]
 
-		return centers, u, jm
+		return centers, partition_matrix, jm
 
