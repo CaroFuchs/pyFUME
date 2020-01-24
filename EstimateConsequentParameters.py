@@ -1,5 +1,7 @@
 import numpy as np
-import numpy.matlib
+from scipy.optimize import curve_fit
+from sklearn.linear_model import LinearRegression
+#import numpy.matlib
 
 class ConsequentEstimator(object):
     def __init__(self,x_train,y_train,partition_matrix):
@@ -7,7 +9,7 @@ class ConsequentEstimator(object):
         self.y_train=y_train
         self.partition_matrix=partition_matrix
         
-    def suglms(self,x_train,y_train,partition_matrix,global_fit=1,df=0):
+    def suglms(self,x_train,y_train,partition_matrix,global_fit=0,df=0):
         # SUGLMS estimates the consequent parameters in the Sugeno-Takagi model
         #	 using least squares.
         #
@@ -71,7 +73,7 @@ class ConsequentEstimator(object):
         if nf == 1:
            global_fit = 1
         
-        if global_fit == 0:                                          # local weighted least mean squares estimates   
+        if global_fit == 0:                                          # Global least mean squares estimates   
             # (reshaped) vector of f devided by the sum of each row of f
             # (normalised membership degree)
             xx = (f.T.flatten()/sumDOF.T.flatten())
@@ -82,8 +84,14 @@ class ConsequentEstimator(object):
             x1 = f1*x1
         
             # Find least squares solution
-            xp = np.linalg.lstsq(x1,y,rcond=None)
-            p=np.reshape(xp[0],(nf,nx), order='F')
+#            xp = np.linalg.lstsq(x1,y,rcond=None)
+            
+            # Perform QR decomposition
+            Q,R = np.linalg.qr(x1) # qr decomposition of A
+            Qy = np.dot(Q.T,y) # computing Q^T*b (project b onto the range of A)
+            xx = np.linalg.solve(R,Qy)
+            
+            p=np.reshape(xx,(nf,nx), order='F')
         
             # Local models
             yl = np.transpose(x).dot(np.transpose(p))						                    #
@@ -95,7 +103,7 @@ class ConsequentEstimator(object):
             # Mask all memberships < 0.2 with NaN's for plots
             ylm[f<0.2] = np.NaN
         
-        elif global_fit == 1:                                         # Global least mean squares estimates
+        elif global_fit == 1:                                         # local weighted least mean squares estimates
             # preallocate variables
             p=np.zeros((nf,nx))
             yl=np.zeros((mx,nf))
@@ -106,8 +114,12 @@ class ConsequentEstimator(object):
                 yx=zz*y[0]
         
                 # Find least squares solution
-                xp = np.linalg.lstsq(x1,yx,rcond=None)
-                p[i,:]=xp[0].T
+#                xp = np.linalg.lstsq(x1,yx,rcond=None)
+                Q,R = np.linalg.qr(x1)      # qr decomposition of x1
+                Qy = np.dot(Q.T,yx)         # computing Q^T*b (project b onto the range of A)
+                xx = np.linalg.solve(R,Qy)
+                
+                p[i,:]=xx.T
                
                 # Global mode
                 yl[:,i] = x.T.dot(p[i,:].T)
@@ -118,3 +130,7 @@ class ConsequentEstimator(object):
                 ylm[f<0.2] = np.NaN    		   
         
         return p #,ym,yl,ylm
+    
+    def sugfunc(self, x1, x2, a, b, c):
+        return a*x1 + b*x2 + c   
+    
