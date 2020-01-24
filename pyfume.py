@@ -15,14 +15,14 @@ class BuildTSFIS(object):
         self.variable_names=variable_names
         
         # Load the data
-        dl=DataLoader(self.datapath)
+        dl=DataLoader(self.datapath,normalize=1)
         self.variable_names=dl.variable_names        
 
         # Split the data using the hold-out method in a training (default: 75%) 
         # and test set (default: 25%).
         ds=DataSplitter(dl.dataX,dl.dataY)
         self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dl.dataX, dl.dataY, percentage_training=0.75)
-        print(self.x_train, self.y_train)
+        print(self.variable_names)
         
         # Cluster the training data (in input-output space) using FCM
         cl=Clusterer(self.x_train, self.y_train, self.nr_clus)
@@ -36,7 +36,7 @@ class BuildTSFIS(object):
         ce=ConsequentEstimator(self.x_train, self.y_train, self.partition_matrix)
         self.consequent_parameters = ce.suglms(self.x_train, self.y_train, self.partition_matrix)
         print(self.consequent_parameters)
-        sys.exit()
+        
         
         # Build a first-order Takagi-Sugeno model using Simpful
         simpbuilder=SugenoFISBuilder(self.antecedent_parameters, self.consequent_parameters, self.variable_names)
@@ -49,9 +49,9 @@ class BuildTSFIS(object):
         print('The RMSE of the system is', self.err)
 
 if __name__=='__main__':
-    RMSE=np.ones([5,1])
-    for i in range(0,5):
-        FIS = BuildTSFIS(datapath='C:/Users/20115284/Documents/Python Scripts/pyFUME/testdata', nr_clus=2)
+    RMSE=np.ones([20,1])
+    for i in range(0,20):
+        FIS = BuildTSFIS(datapath='C:/Users/20115284/Documents/Python Scripts/pyFUME/Concrete_data.csv', nr_clus=4)
         RMSE[i]=FIS.err
-        print(RMSE)
-        
+    print(RMSE)
+    
