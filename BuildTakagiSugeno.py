@@ -60,10 +60,11 @@ class BuildTSFIS(object):
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True           
         simpbuilder = SugenoFISBuilder(self.antecedent_parameters, self.consequent_parameters, self.variable_names, save_simpful_code=kwargs['save_simpful_code'])
         self.model = simpbuilder.simpfulmodel
-        
+
+        """        
         # Calculate the mean squared error of the model using the test data set
         test = SugenoFISTester(self.model, self.x_test,self.y_test)
         RMSE = test.calculate_RMSE(variable_names=self.variable_names)
         self.RMSE = list(RMSE.values())
         print('The RMSE of the fuzzy system is', self.RMSE)
-
+        """

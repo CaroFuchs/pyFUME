@@ -12,7 +12,7 @@ class SugenoFISTester(object):
     def calculate_RMSE(self, variable_names, list_of_outputs=['OUTPUT']):
         # read names
         RMSE = defaultdict(float)
-        
+       
         for sample in self._data_to_test:
             for i, variable in enumerate(variable_names):
                 self._model_to_test.set_variable(variable, sample[i])
