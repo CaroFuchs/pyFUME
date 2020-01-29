@@ -2,12 +2,12 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 class AntecedentEstimator(object):
-    def __init__(self, x_train,partition_matrix,mf_shape):
+    def __init__(self, x_train, partition_matrix, mf_shape='gauss'):
         self.xtrain=x_train
         self.partition_matrix=partition_matrix
                 
         
-    def determineMF(self,x_train,partition_matrix,mf_shape='gauss2'):
+    def determineMF(self,x_train,partition_matrix,mf_shape='gauss'):
         mf_list=[]
         for i in range(0,x_train.shape[1]):
             xin=x_train[:,i]

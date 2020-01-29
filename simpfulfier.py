@@ -1,3 +1,4 @@
+import simpful 
 
 class SimpfulConverter(object):
     """    This object converts a description of a Fuzzy System into a readable

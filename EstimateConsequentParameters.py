@@ -4,12 +4,12 @@ from sklearn.linear_model import LinearRegression
 #import numpy.matlib
 
 class ConsequentEstimator(object):
-    def __init__(self,x_train,y_train,partition_matrix):
+    def __init__(self, x_train, y_train, partition_matrix):
         self.x_train=x_train
         self.y_train=y_train
         self.partition_matrix=partition_matrix
         
-    def suglms(self,x_train,y_train,partition_matrix,global_fit=0,df=0):
+    def suglms(self, x_train, y_train, partition_matrix, global_fit=True, df=0):
         # SUGLMS estimates the consequent parameters in the Sugeno-Takagi model
         #	 using least squares.
         #
@@ -71,9 +71,9 @@ class ConsequentEstimator(object):
         x=x.T                                # reshape data matrix
         
         if nf == 1:
-           global_fit = 1
+           global_fit = False
         
-        if global_fit == 0:                                          # Global least mean squares estimates   
+        if global_fit == True:                                          # Global least mean squares estimates   
             # (reshaped) vector of f devided by the sum of each row of f
             # (normalised membership degree)
             xx = (f.T.flatten()/sumDOF.T.flatten())
@@ -103,7 +103,7 @@ class ConsequentEstimator(object):
             # Mask all memberships < 0.2 with NaN's for plots
             ylm[f<0.2] = np.NaN
         
-        elif global_fit == 1:                                         # local weighted least mean squares estimates
+        elif global_fit == False:                                         # local weighted least mean squares estimates
             # preallocate variables
             p=np.zeros((nf,nx))
             yl=np.zeros((mx,nf))
