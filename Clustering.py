@@ -20,35 +20,35 @@ class Clusterer(object):
 
 		if method == "fcm":
 			try:
-				max_iter = kwargs["max_iter"]
+				max_iter = kwargs["fcm_max_iter"]
 			except:
 				max_iter = 1000
 			try:
-				error = kwargs["error"]
+				error = kwargs["fcm_error"]
 			except:
 				error = 0.005
-			try:
-				seed = kwargs["seed"]
-			except:
-				seed = None
+#			try:
+#				seed = kwargs["seed"]
+#			except:
+#				seed = None
 
 			centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=m, max_iter=max_iter, error=error)
 
 		elif method == "fstpso":
 			try:
-				max_iter = kwargs["max_iter"]
+				max_iter = kwargs["fstpso_max_iter"]
 			except:
 				max_iter=100
 			try:
-				n_particles = kwargs["n_particles"]
+				n_particles = kwargs["fstpso_n_particles"]
 			except:
 				n_particles = None
 			try:
-				path_fit_dump = kwargs["path_fit_dump"]
+				path_fit_dump = kwargs["fstpso_path_fit_dump"]
 			except:
 				path_fit_dump = None
 			try:
-				path_sol_dump = kwargs["path_sol_dump"]
+				path_sol_dump = kwargs["fstpso_path_sol_dump"]
 			except:
 				path_sol_dump = None
 
