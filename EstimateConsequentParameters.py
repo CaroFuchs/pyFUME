@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from sklearn.linear_model import LinearRegression
-#import numpy.matlib
+import numpy.matlib
 
 class ConsequentEstimator(object):
     def __init__(self, x_train, y_train, partition_matrix):
