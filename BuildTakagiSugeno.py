@@ -58,7 +58,7 @@ class BuildTSFIS(object):
         
         # Build a first-order Takagi-Sugeno model using Simpful
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True           
-        simpbuilder = SugenoFISBuilder(self.antecedent_parameters, self.consequent_parameters, self.variable_names, save_simpful_code=kwargs['save_simpful_code'])
+        simpbuilder = SugenoFISBuilder(self.antecedent_parameters, self.consequent_parameters, self.variable_names, operators=kwargs["operators"], save_simpful_code=kwargs['save_simpful_code'])
         self.model = simpbuilder.simpfulmodel
 
         """        

@@ -50,5 +50,5 @@ class pyFUME(object):
 
 if __name__=='__main__':
    
-    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=4, method='Takagi-Sugeno')
+    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=3, method='Takagi-Sugeno', operators=None)
     print ("The calculated error is:", FIS.calculate_error())
