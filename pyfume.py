@@ -49,6 +49,8 @@ class pyFUME(object):
     """ 
 
 if __name__=='__main__':
+    from numpy.random import seed
+    seed(4)
    
     FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=4, method='Takagi-Sugeno')
     print ("The calculated error is:", FIS.calculate_error())
