@@ -3,14 +3,14 @@ from Tester import SugenoFISTester
 import numpy as np
 
 class pyFUME(object):
-    def __init__(self, datapath, nr_clus, method='Takagi-Sugeno', variable_names=None, **kwargs):
+    def __init__(self, datapath, nr_clus, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., **kwargs):
         self.datapath=datapath
         self.nr_clus=nr_clus
         self.method=method
         #self.variable_names=variable_names
 
         if method=='Takagi-Sugeno' or method=='Sugeno':
-            self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, **kwargs)
+            self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, merge_threshold=merge_threshold, **kwargs)
         else:
             raise Exception ("This modeling technique has not yet been implemented.")
 
@@ -52,5 +52,6 @@ if __name__=='__main__':
     from numpy.random import seed
     seed(4)
    
-    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=3, method='Takagi-Sugeno', operators=None)
+    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=3, method='Takagi-Sugeno',
+     merge_threshold=.85, operators=None)
     print ("The calculated error is:", FIS.calculate_error())

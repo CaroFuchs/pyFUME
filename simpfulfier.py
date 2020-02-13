@@ -9,6 +9,7 @@ class SimpfulConverter(object):
         input_variables_names,
         consequents_matrix,
         fuzzy_sets,
+        fuzzy_sets_to_drop=None,
         operators = None
         ):
         super(SimpfulConverter, self).__init__()
@@ -16,6 +17,7 @@ class SimpfulConverter(object):
         self._consequents_matrix = consequents_matrix
         self._clusters = len(self._consequents_matrix)
         self._fuzzy_sets = fuzzy_sets
+        self._fuzzy_sets_to_drop = fuzzy_sets_to_drop
 
         assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
 
@@ -112,9 +114,29 @@ class SimpfulConverter(object):
         return result
 
     def _create_antecedents(self):
+
         result = []
+
         for i in range(self._clusters):
-            result.append( (" AND ".join(["(%s IS cluster%d)" % (name, i+1) for name in self._input_variables])) )
+            #print("Building rule/cluster %d" % i)
+
+            #remap = list(filter( lambda x: x[1]==i, self._fuzzy_sets_to_drop ))
+
+        
+            # chunk = (" AND ".join(["(%s IS cluster%d)" % (name, i+1) for name in self._input_variables]))
+
+            pieces = []
+            for j, var in enumerate(self._input_variables):
+                value = "cluster%d"% (i + 1)
+                if (j,i) in self._fuzzy_sets_to_drop.keys():
+                    value = "cluster%d" % (self._fuzzy_sets_to_drop[(j, i)] + 1)
+                pieces.append("(%s IS %s)" % (var, value)) 
+                
+            chunk = (" AND ".join(pieces))
+            result.append( chunk )
+
+            #print (chunk)
+        #exit()
         return result
         
     def create_rules(self):
@@ -142,4 +164,4 @@ if __name__ == '__main__':
     SC.save_code("TEST.py")
     SC.generate_object()
     print(FS._mfs['pippo'])
-    
+    a
