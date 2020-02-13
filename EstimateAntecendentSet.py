@@ -3,23 +3,24 @@ from scipy.optimize import curve_fit
 
 class AntecedentEstimator(object):
 	def __init__(self, x_train, partition_matrix, mf_shape='gauss'):
-		self.xtrain=x_train
-		self.partition_matrix=partition_matrix
+		self.xtrain = x_train 
+		self.partition_matrix = partition_matrix
 		self._info_for_simplification = None
-				
+		self._calculate_all_extreme_values()
+						
 		
-	def determineMF(self,x_train,partition_matrix,mf_shape='gauss', merge_threshold=1.):
+	def determineMF(self, mf_shape='gauss', merge_threshold=1.):
 		mf_list=[]
 
 		# mf_list is structured as follows:
 		# - an outer list of V variables
 		# - each item of the outer list contains C fuzzy set, one for each cluster
 
-		number_of_variables = x_train.shape[1]
+		number_of_variables = self.xtrain.shape[1]
 		for i in range(0, number_of_variables):
-			xin=x_train[:,i]
-			for j in range(0,partition_matrix.shape[1]):
-				mfin = partition_matrix[:,j]
+			xin = self.xtrain[:,i]
+			for j in range(0, self.partition_matrix.shape[1]):
+				mfin = self.partition_matrix[:,j]
 				mf, xx = self.convexMF(xin, mfin)
 				prm = self.fitMF(xx, mf, mf_shape)
 				mf_list.append(prm) 
@@ -47,6 +48,10 @@ class AntecedentEstimator(object):
 
 	def _extreme_values_for_variable(self, v):
 		return min(self.xtrain.T[v]), max(self.xtrain.T[v])
+
+	def _calculate_all_extreme_values(self):
+		num_variables = len(self.xtrain.T)
+		self._extreme_values = [self._extreme_values_for_variable(v) for v in range(num_variables)]
 
 	def _check_similarities(self, mf_list, number_of_variables,
 			threshold=1.):

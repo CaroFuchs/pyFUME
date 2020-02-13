@@ -3,7 +3,7 @@ from simpfulfier import SimpfulConverter
 class SugenoFISBuilder(object):
     """docstring for SugenoFISBuilder"""
     def __init__(self, antecedent_sets, consequent_parameters, 
-        variable_names, operators=None, save_simpful_code=True, fuzzy_sets_to_drop=None):
+        variable_names, extreme_values=None, operators=None, save_simpful_code=True, fuzzy_sets_to_drop=None):
         
         super(SugenoFISBuilder, self).__init__()
 
@@ -12,6 +12,7 @@ class SugenoFISBuilder(object):
             consequents_matrix = consequent_parameters,
             fuzzy_sets = antecedent_sets,
             operators = operators,
+            extreme_values = extreme_values,
             fuzzy_sets_to_drop=fuzzy_sets_to_drop
             )
         

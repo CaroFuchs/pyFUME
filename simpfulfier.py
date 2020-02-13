@@ -10,6 +10,7 @@ class SimpfulConverter(object):
         consequents_matrix,
         fuzzy_sets,
         fuzzy_sets_to_drop=None,
+        extreme_values = None,
         operators = None
         ):
         super(SimpfulConverter, self).__init__()
@@ -18,6 +19,7 @@ class SimpfulConverter(object):
         self._clusters = len(self._consequents_matrix)
         self._fuzzy_sets = fuzzy_sets
         self._fuzzy_sets_to_drop = fuzzy_sets_to_drop
+        self._extreme_values = extreme_values
 
         assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
 
@@ -71,13 +73,14 @@ class SimpfulConverter(object):
         return "\n".join(self._source_code)
 
 
-    def _create_fuzzy_sets(self):
+    def _create_fuzzy_sets(self, verbose=False):
         j=0
         chunk = ""
-        for var in self._input_variables:
+        for num_var, var in enumerate(self._input_variables):
+
             subchunk = []
             for cluster in range(self._clusters):
-                print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
+                if verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
                 chunk += 'FS_%d = FuzzySet(' % (j+1)
 
                 term = 'cluster%d' % (cluster+1)
@@ -101,7 +104,7 @@ class SimpfulConverter(object):
                 j += 1
                 chunk += "\n"
 
-            chunk += "MF_%s = LinguisticVariable([%s], concept='%s')\n" % (var, ", ".join(subchunk), var )
+            chunk += "MF_%s = LinguisticVariable([%s], concept='%s' , universe_of_discourse=%s)\n" % (var, ", ".join(subchunk), var, self._extreme_values[num_var] )
             chunk += "FS.add_linguistic_variable('%s', MF_%s)\n\n" % (var, var)
 
         return chunk

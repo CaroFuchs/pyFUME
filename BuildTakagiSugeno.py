@@ -48,8 +48,7 @@ class BuildTSFIS(object):
         if 'mf_shape' not in kwargs.keys(): kwargs['mf_shape'] = 'gauss'       
         ae = AntecedentEstimator(self.x_train, self.partition_matrix)
 
-        self.antecedent_parameters = ae.determineMF(self.x_train, self.partition_matrix,
-            mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
+        self.antecedent_parameters = ae.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
         what_to_drop = ae._info_for_simplification
         
         # Estimate the parameters of the consequent (default: global fitting)
@@ -62,8 +61,15 @@ class BuildTSFIS(object):
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
                    
-        simpbuilder = SugenoFISBuilder(self.antecedent_parameters, self.consequent_parameters, 
-            self.variable_names, operators=kwargs["operators"], save_simpful_code=kwargs['save_simpful_code'], fuzzy_sets_to_drop=what_to_drop)
+        simpbuilder = SugenoFISBuilder(
+            self.antecedent_parameters, 
+            self.consequent_parameters, 
+            self.variable_names, 
+            extreme_values = ae._extreme_values,
+            operators=kwargs["operators"], 
+            save_simpful_code=kwargs['save_simpful_code'], 
+            fuzzy_sets_to_drop=what_to_drop)
+
         self.model = simpbuilder.simpfulmodel
 
         """        
