@@ -46,14 +46,11 @@ class BuildTSFIS(object):
         
         # Estimate the membership funtions of the system (default shape: gauss)
         if 'mf_shape' not in kwargs.keys(): kwargs['mf_shape'] = 'gauss'       
-
         ae = AntecedentEstimator(self.x_train, self.partition_matrix)
 
         self.antecedent_parameters = ae.determineMF(self.x_train, self.partition_matrix,
             mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
         what_to_drop = ae._info_for_simplification
-
-        #print("what to drop:", what_to_drop)
         
         # Estimate the parameters of the consequent (default: global fitting)
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = True  
@@ -62,7 +59,9 @@ class BuildTSFIS(object):
                                                global_fit=kwargs['global_fit'])
         
         # Build a first-order Takagi-Sugeno model using Simpful
-        if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True           
+        if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
+        if 'operators' not in kwargs.keys(): kwargs['operators'] = None
+                   
         simpbuilder = SugenoFISBuilder(self.antecedent_parameters, self.consequent_parameters, 
             self.variable_names, operators=kwargs["operators"], save_simpful_code=kwargs['save_simpful_code'], fuzzy_sets_to_drop=what_to_drop)
         self.model = simpbuilder.simpfulmodel
