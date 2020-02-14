@@ -7,10 +7,12 @@ class pyFUME(object):
         self.datapath=datapath
         self.nr_clus=nr_clus
         self.method=method
+        self.dropped_fuzzy_sets = 0
         #self.variable_names=variable_names
 
         if method=='Takagi-Sugeno' or method=='Sugeno':
             self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, merge_threshold=merge_threshold, **kwargs)
+            self.dropped_fuzzy_sets = self.FIS._antecedent_estimator.get_number_of_dropped_fuzzy_sets()
         else:
             raise Exception ("This modeling technique has not yet been implemented.")
 

@@ -12,6 +12,7 @@ class BuildTSFIS(object):
         self.datapath = datapath
         self.nr_clus = nr_clus
         self.variable_names = variable_names
+        self._antecedent_estimator = None
         
         # Load the data
         if 'normalize' not in kwargs.keys(): kwargs['normalize'] = False       
@@ -46,10 +47,10 @@ class BuildTSFIS(object):
         
         # Estimate the membership funtions of the system (default shape: gauss)
         if 'mf_shape' not in kwargs.keys(): kwargs['mf_shape'] = 'gauss'       
-        ae = AntecedentEstimator(self.x_train, self.partition_matrix)
+        self._antecedent_estimator = AntecedentEstimator(self.x_train, self.partition_matrix)
 
-        self.antecedent_parameters = ae.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
-        what_to_drop = ae._info_for_simplification
+        self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
+        what_to_drop = self._antecedent_estimator._info_for_simplification
         
         # Estimate the parameters of the consequent (default: global fitting)
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = True  
@@ -65,7 +66,7 @@ class BuildTSFIS(object):
             self.antecedent_parameters, 
             self.consequent_parameters, 
             self.variable_names, 
-            extreme_values = ae._extreme_values,
+            extreme_values = self._antecedent_estimator._extreme_values,
             operators=kwargs["operators"], 
             save_simpful_code=kwargs['save_simpful_code'], 
             fuzzy_sets_to_drop=what_to_drop)

@@ -50,7 +50,7 @@ class AntecedentEstimator(object):
 		self._extreme_values = [self._extreme_values_for_variable(v) for v in range(num_variables)]
 
 	def _check_similarities(self, mf_list, number_of_variables,
-			threshold=1.):
+			threshold=1., approx_points=100):
 
 		number_of_clusters = len(mf_list)//number_of_variables
 		
@@ -69,6 +69,9 @@ class AntecedentEstimator(object):
 
 		for v in range(number_of_variables):
 
+			mi, ma = self._extreme_values_for_variable(v)
+			points = np.linspace(mi, ma, approx_points)
+
 			for c1 in range(number_of_clusters):
 				for c2 in range(c1+1, number_of_clusters):
 
@@ -80,9 +83,6 @@ class AntecedentEstimator(object):
 					if funname1== "gauss":
 						
 						from numpy import linspace, array
-
-						mi, ma = self._extreme_values_for_variable(v)
-						points = linspace(mi, ma, 100)
 
 						first_cluster = array([self.gaussmf(x, params1[0], params1[1]) for x in points])
 						second_cluster = array([self.gaussmf(x, params2[0], params2[1]) for x in points])
@@ -122,11 +122,15 @@ class AntecedentEstimator(object):
 						if el!=retained:
 							self._info_for_simplification[(var_num, el)]  = retained					
 					
-		print (" * %d antecedent clauses will be simplified using a threshold %.2f" % (len(self._info_for_simplification), threshold))
+		dropped_stuff = self.get_number_of_dropped_fuzzy_sets()
+		print (" * %d antecedent clauses will be simplified using a threshold %.2f" % (dropped_stuff, threshold))
 		self._info_for_simplification
 
+	def get_number_of_dropped_fuzzy_sets(self):
+		return len(self._info_for_simplification)
+
 	def _create_graph(self, list_of_arcs):
-		from networkx import DiGraph, Graph, is_strongly_connected, connected_components
+		from networkx import Graph, connected_components
 		G = Graph()
 		nodelist = []
 		for arc in list_of_arcs:
