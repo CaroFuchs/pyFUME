@@ -1,6 +1,12 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
+def is_complete(G):
+	nodelist = G.nodes
+	H = G.subgraph(nodelist)
+	n = len(nodelist)
+	return H.size() == n*(n-1)/2
+
 class AntecedentEstimator(object):
 	def __init__(self, x_train, partition_matrix, mf_shape='gauss'):
 		self.xtrain = x_train 
@@ -31,16 +37,6 @@ class AntecedentEstimator(object):
 
 		return mf_list
 
-	def _check_graph(self, list_of_arcs):
-		from networkx import DiGraph, Graph, is_strongly_connected
-		G = DiGraph()
-		nodelist = []
-		for arc in list_of_arcs:
-			G.add_edge(arc[0], arc[1])
-			nodelist.append(arc[0])
-			nodelist.append(arc[1])
-		return self.is_subclique(G,list(set(nodelist)))
-
 	def is_subclique(self,G,nodelist):
 		H = G.subgraph(nodelist)
 		n = len(nodelist)
@@ -62,12 +58,19 @@ class AntecedentEstimator(object):
 
 		things_to_be_removed = defaultdict(list)
 
+
+		""" 
+			This function assesses the pair-wise similarities between 
+			the clusters mapped on each variable.
+			It returns a dictionary of this kind:
+			variable -> list of similar couples for that variable + jaccard sim
+
+		"""
+
 		for v in range(number_of_variables):
-			#print (" * Checking similiarities for variable %d" % v)
 
 			for c1 in range(number_of_clusters):
 				for c2 in range(c1+1, number_of_clusters):
-					#print ("Comparing fuzzy set of cluster %d with fuzzy set of cluster %d" % (c1,c2))
 
 					index1 = v*number_of_clusters + c1
 					index2 = v*number_of_clusters + c2
@@ -90,7 +93,6 @@ class AntecedentEstimator(object):
 						jaccardsim = (intersection/union)
 
 						if jaccardsim>threshold:
-							#print ("OMG it's the same!")
 							things_to_be_removed[v].append([c1,c2,jaccardsim])
 
 							#print("%.2f is fine" % jaccardsim)
@@ -98,28 +100,42 @@ class AntecedentEstimator(object):
 					else:
 						raise Exception("Not implemented yet")
 
-		#print(things_to_be_removed)
+		#for k,v in things_to_be_removed.items():			print (k, v)
+		#exit()
+		"""
+			This function must return a dictionary of items like:
+			(variable, cluster) -> mapped_cluster
+		"""
+
 		self._info_for_simplification = {}
-		for k,value in things_to_be_removed.items():
-			is_conn = self._check_graph(value)
-			if is_conn:
-				"""
-				print (k, is_conn)
-				print (value)
-				print ( " I will retain %d" % value[0][0])
-				"""
-				retained = value[0][0]
-				for element in value:
-					if element[0]!=retained:
-						self._info_for_simplification[(k,element[0])] = retained
-					if element[1]!=retained:
-						self._info_for_simplification[(k,element[1])] = retained
+		for var_num, value in things_to_be_removed.items():
 
+			subcomponents = self._create_graph(value)
+
+			for subcomp in subcomponents:
+				#print (is_complete(subcomp))
+
+				if is_complete(subcomp):
+					retained = list(subcomp.nodes())[0]
+					#print ("retain: %d" % retained)
+					for el in list(subcomp.nodes()):
+						if el!=retained:
+							self._info_for_simplification[(var_num, el)]  = retained					
+					
 		print (" * %d antecedent clauses will be simplified using a threshold %.2f" % (len(self._info_for_simplification), threshold))
-
 		self._info_for_simplification
-		
 
+	def _create_graph(self, list_of_arcs):
+		from networkx import DiGraph, Graph, is_strongly_connected, connected_components
+		G = Graph()
+		nodelist = []
+		for arc in list_of_arcs:
+			G.add_edge(arc[0], arc[1])
+			nodelist.append(arc[0])
+			nodelist.append(arc[1])
+		S = [G.subgraph(c).copy() for c in connected_components(G)]
+		return S
+			
 	   
 	def convexMF(self, xin, mfin, norm=1, nc=1000):
 		

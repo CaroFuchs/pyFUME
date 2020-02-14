@@ -121,13 +121,7 @@ class SimpfulConverter(object):
         result = []
 
         for i in range(self._clusters):
-            #print("Building rule/cluster %d" % i)
-
-            #remap = list(filter( lambda x: x[1]==i, self._fuzzy_sets_to_drop ))
-
-        
-            # chunk = (" AND ".join(["(%s IS cluster%d)" % (name, i+1) for name in self._input_variables]))
-
+            
             pieces = []
             for j, var in enumerate(self._input_variables):
                 value = "cluster%d"% (i + 1)
@@ -138,8 +132,6 @@ class SimpfulConverter(object):
             chunk = (" AND ".join(pieces))
             result.append( chunk )
 
-            #print (chunk)
-        #exit()
         return result
         
     def create_rules(self):

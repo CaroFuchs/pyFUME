@@ -52,6 +52,6 @@ if __name__=='__main__':
     from numpy.random import seed
     seed(4)
    
-    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=3, method='Takagi-Sugeno',
-     merge_threshold=.85, operators=None)
+    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=4, method='Takagi-Sugeno',
+     merge_threshold=.8, operators=None)
     print ("The calculated error is:", FIS.calculate_error())
