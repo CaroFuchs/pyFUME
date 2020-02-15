@@ -80,6 +80,10 @@ class SimpfulConverter(object):
 
             subchunk = []
             for cluster in range(self._clusters):
+
+                if (num_var, cluster) in self._fuzzy_sets_to_drop:
+                    chunk+="# "
+
                 if verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
                 chunk += 'FS_%d = FuzzySet(' % (j+1)
 
@@ -99,7 +103,8 @@ class SimpfulConverter(object):
                     chunk += "function=InvGaussian_MF(%f, %f), term='%s')" % (params[0], params[1], term) 
                 else:
                     raise Exception("Fuzzy set type not supported,"+fstype)
-                subchunk.append("FS_%d" % (j+1))
+                if (num_var, cluster) not in self._fuzzy_sets_to_drop:
+                    subchunk.append("FS_%d" % (j+1))
                 #print ( self._fuzzy_sets[j] )
                 j += 1
                 chunk += "\n"
