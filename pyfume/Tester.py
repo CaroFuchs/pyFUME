@@ -26,6 +26,7 @@ class SugenoFISTester(object):
 
         return RMSE
     
+    
     def calculate_MSE(self, variable_names, list_of_outputs=['OUTPUT']):
         # read names
         MSE = defaultdict(float)
@@ -59,3 +60,20 @@ class SugenoFISTester(object):
             MAE[k] = sqrt(v/len(self._data_to_test))
 
         return MAE
+    
+    def calculate_MAPE(self, variable_names, list_of_outputs=['OUTPUT']):
+        # read names
+        MAPE = defaultdict(float)
+        
+        for sample in self._data_to_test:
+            for i, variable in enumerate(variable_names):
+                self._model_to_test.set_variable(variable, sample[i])
+            result = self._model_to_test.Sugeno_inference()
+            
+            for j, output in enumerate(list_of_outputs):
+                MAPE[output] += abs((result[output] - self._golden_standard[j])/self._golden_standard[j])
+
+        for k,v in MAE.items():
+            MAPE[k] = sqrt(v/len(self._data_to_test))
+
+        return MAPE

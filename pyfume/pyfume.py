@@ -27,6 +27,12 @@ class pyFUME(object):
 
         if method=="RMSE":
             return self._get_RMSE()
+        elif method=="MAE":
+            return self._get_MAE()
+        elif method=="MAPE":
+            return self._get_MAPE()
+        elif method=="RMSE":
+            return self._get_RMSE()
         else:
             # return self._get_MSE()
             raise Exception("Method '%s' not implemented yet" % (method))
@@ -39,8 +45,30 @@ class pyFUME(object):
         #RMSE = list(RMSE.values())
         #print('The RMSE of the fuzzy system is', RMSE)
         return dict(RMSE)
-        
+    
+    def _get_MSE(self):
 
+        # Calculate the mean squared error of the model using the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        MSE = test.calculate_MSE(variable_names=self.FIS.variable_names)
+        #RMSE = list(RMSE.values())
+        #print('The RMSE of the fuzzy system is', RMSE)
+        return dict(MSE)
+        
+    
+    def _get_MAE(self):
+
+        # Calculate the mean absolute error of the model using the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        MAE = test.calculate_MAE(variable_names=self.FIS.variable_names)
+        return dict(MAE)
+    
+    def _get_MAPE(self):
+
+        # Calculate the mean absolute percentage error of the model using the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        MAPE = test.calculate_MAPE(variable_names=self.FIS.variable_names)
+        return dict(MAPE)
     """
     def _get_RMSE(self):
         if self.FIS.error is None:
