@@ -9,7 +9,7 @@ For the following example, we use the Concrete Compressive Strength data set [1]
 The  code  in  Example 1  is  simple  and  easy  to  use,  making it  ideal  to  use  for  practitioners  who  wish  to  use  the  default settings or only wish to use few non-default settings. 
 Users that wish to deviate from  the  default  settings  can  use  the code  as shown  in  Example 2.
 
-# Example 1
+### Example 1
 ```
 from pyfume import *
 
@@ -41,7 +41,7 @@ model.set_variable('Age', 45.0)
 print(model.Sugeno_inference(['OUTPUT']))
 ```
 
-# Example 2
+### Example 2
 
 ```
 from LoadData import DataLoader
