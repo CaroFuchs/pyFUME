@@ -47,7 +47,7 @@ class ConsequentEstimator(object):
         if u.shape[0]!=1 or u[0]!=1:
             x = np.hstack((x,np.ones((x.shape[0],1))))
     
-        # Find the number of data points (mx & mx) , the number of variables (nx) and the
+        # Find the number of data points (mx & mf) , the number of variables (nx) and the
         # number of clusters (nf) 
         mx,nx=x.shape
         mf,nf=f.shape

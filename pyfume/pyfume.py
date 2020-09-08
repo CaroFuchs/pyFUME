@@ -1,5 +1,13 @@
-from BuildTakagiSugeno import BuildTSFIS
-from Tester import SugenoFISTester
+from .BuildTakagiSugeno import *
+from .Clustering import *
+from .EstimateAntecendentSet import *
+from .EstimateConsequentParameters import *
+from .LoadData import *
+from .simpfulfier import *
+from .SimpfulModelBuilder import *
+from .Splitter import *
+from .Tester import *
+
 import numpy as np
 
 class pyFUME(object):
@@ -36,6 +44,12 @@ class pyFUME(object):
         else:
             # return self._get_MSE()
             raise Exception("Method '%s' not implemented yet" % (method))
+            
+    def predict_test_data(self):
+        #get the prediction for the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        pred = test.predict(variable_names=self.FIS.variable_names)
+        return pred
         
     def _get_RMSE(self):
 
@@ -44,7 +58,7 @@ class pyFUME(object):
         RMSE = test.calculate_RMSE(variable_names=self.FIS.variable_names)
         #RMSE = list(RMSE.values())
         #print('The RMSE of the fuzzy system is', RMSE)
-        return dict(RMSE)
+        return RMSE
     
     def _get_MSE(self):
 
@@ -53,7 +67,7 @@ class pyFUME(object):
         MSE = test.calculate_MSE(variable_names=self.FIS.variable_names)
         #RMSE = list(RMSE.values())
         #print('The RMSE of the fuzzy system is', RMSE)
-        return dict(MSE)
+        return MSE
         
     
     def _get_MAE(self):
@@ -61,14 +75,15 @@ class pyFUME(object):
         # Calculate the mean absolute error of the model using the test data set
         test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
         MAE = test.calculate_MAE(variable_names=self.FIS.variable_names)
-        return dict(MAE)
+        return MAE
     
     def _get_MAPE(self):
 
         # Calculate the mean absolute percentage error of the model using the test data set
         test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
         MAPE = test.calculate_MAPE(variable_names=self.FIS.variable_names)
-        return dict(MAPE)
+        return MAPE
+
     """
     def _get_RMSE(self):
         if self.FIS.error is None:
