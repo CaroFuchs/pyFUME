@@ -12,7 +12,6 @@ class SugenoFISTester(object):
         self._golden_standard = golden_standard
 
     def predict(self, variable_names, list_of_outputs=['OUTPUT']):
-        # read names
         result = []
         for sample in self._data_to_test:
             for i, variable in enumerate(variable_names):
@@ -23,18 +22,18 @@ class SugenoFISTester(object):
         return result, error
 
     def calculate_RMSE(self, variable_names, list_of_outputs=['OUTPUT']):
-        error=self.predict(variable_names, list_of_outputs)
+        _, error=self.predict(variable_names, list_of_outputs)
         return sqrt(np.mean(np.square(error)))
     
     
     def calculate_MSE(self, variable_names, list_of_outputs=['OUTPUT']):
-        error=self.predict(variable_names, list_of_outputs)
+        _, error=self.predict(variable_names, list_of_outputs)
         return np.mean(np.square(error))   
     
     def calculate_MAE(self, variable_names, list_of_outputs=['OUTPUT']):
-        error=self.predict(variable_names, list_of_outputs)
+        _, error=self.predict(variable_names, list_of_outputs)
         return np.mean(np.abs(error))
     
     def calculate_MAPE(self, variable_names, list_of_outputs=['OUTPUT']):
-        error=self.predict(variable_names, list_of_outputs)
+        _, error=self.predict(variable_names, list_of_outputs)
         return np.mean(np.abs((error) / self._golden_standard)) * 100

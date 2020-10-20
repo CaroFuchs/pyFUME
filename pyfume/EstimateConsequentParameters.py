@@ -2,14 +2,15 @@ import numpy as np
 from scipy.optimize import curve_fit
 from sklearn.linear_model import LinearRegression
 import numpy.matlib
+import statsmodels.api as sm
 
 class ConsequentEstimator(object):
-    def __init__(self, x_train, y_train, partition_matrix):
+    def __init__(self, x_train, y_train, firing_strengths):
         self.x_train=x_train
         self.y_train=y_train
-        self.partition_matrix=partition_matrix
+        self.firing_strengths=firing_strengths
         
-    def suglms(self, x_train, y_train, partition_matrix, global_fit=True, df=0):
+    def suglms(self, x_train, y_train, firing_strengths, global_fit=True, df=0):
         # SUGLMS estimates the consequent parameters in the Sugeno-Takagi model
         #	 using least squares.
         #
@@ -40,7 +41,7 @@ class ConsequentEstimator(object):
         
         x=x_train.copy()
         y=y_train.copy()
-        f=partition_matrix.copy()
+        f=firing_strengths.copy()
         
         # Check if input X contains one column of ones (for the constant). If not, add it.
         u=np.unique(x[:,-1])
@@ -62,18 +63,18 @@ class ConsequentEstimator(object):
         sumDOF = np.matlib.repmat(sumDOF,nf,1).T
         
         
-        # Auxillary variables
-        f1 = x.flatten()
-        s = np.matlib.repmat(f1,nf,1).T
-        xx = np.reshape(s, (nx,nf*mx), order='F')
-        s = xx.T  
-        x1=np.reshape(s,(mx,nf*nx),order='F') 
-        x=x.T                                # reshape data matrix
-        
         if nf == 1:
            global_fit = False
         
-        if global_fit == True:                                          # Global least mean squares estimates   
+        if global_fit == True:                                          # Global least mean squares estimates 
+            # Auxillary variables
+            f1 = x.flatten()
+            s = np.matlib.repmat(f1,nf,1).T
+            xx = np.reshape(s, (nx,nf*mx), order='F')
+            s = xx.T  
+            x1=np.reshape(s,(mx,nf*nx),order='F') 
+            x=x.T                                # reshape data matrix
+            
             # (reshaped) vector of f devided by the sum of each row of f
             # (normalised membership degree)
             xx = (f.T.flatten()/sumDOF.T.flatten())
@@ -104,31 +105,41 @@ class ConsequentEstimator(object):
             ylm[f<0.2] = np.NaN
         
         elif global_fit == False:                                         # local weighted least mean squares estimates
-            # preallocate variables
-            p=np.zeros((nf,nx))
-            yl=np.zeros((mx,nf))
+            # Pre-allocate variable
+            p=np.zeros([nf,nx])
+            
             for i in range (0,nf):
-                f1 = np.tile(f[:,i],(nx,1)).T
-                x1 = np.sqrt(f1)*np.transpose(x) 
-                zz=np.sqrt(f[:,i])
-                yx=zz*y[0]
-        
-                # Find least squares solution
-#                xp = np.linalg.lstsq(x1,yx,rcond=None)
-                Q,R = np.linalg.qr(x1)      # qr decomposition of x1
-                Qy = np.dot(Q.T,yx)         # computing Q^T*b (project b onto the range of A)
-                xx = np.linalg.solve(R,Qy)
-                
-                p[i,:]=xx.T
+                '''
+                # Weight the points with the firing strength of the rule
+                #W=np.sqrt(np.diag(f[:,i]))
+                W=np.array([f[:,i],]*nx).transpose()
+                x1 = np.multiply(W,x)
+                y1 = np.multiply(f[:,i],y)
                
-                # Global mode
-                yl[:,i] = x.T.dot(p[i,:].T)
-                ym = yl.copy()
-                ylm = yl.copy()
+                # Perform QR decomposition
+                Q,R = np.linalg.qr(x1)      # qr decomposition of x1
+                Qy = np.dot(Q.T,y1)         # computing Q^T*b (project by onto the range of x1)
                 
-                # Mask all memberships < 0.2 with NaN's for plots
-                ylm[f<0.2] = np.NaN    		   
-        
+                #perform least-squares
+                p[i] = np.linalg.solve(R,Qy)
+                
+                wls_model=sm.WLS(y, x, weights=f[:,i]) 
+                results = wls_model.fit()
+                p[i]=np.array(results.params)               
+        '''
+                # Select firing strength of the selected rule
+                w= f[:,i]
+                
+                # Weight input with firing strength
+                xw = x * np.sqrt(w[:,np.newaxis])
+                
+                # Weight output with firing strength
+                yw = y * np.sqrt(w)
+                
+                # Perform least squares with weighted input and output
+                prm,_,_,_=np.linalg.lstsq(xw, yw, rcond=None)
+                p[i]=prm
+                       
         return p #,ym,yl,ylm
     
     def sugfunc(self, x1, x2, a, b, c):
