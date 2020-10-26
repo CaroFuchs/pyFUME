@@ -2,11 +2,11 @@ import setuptools
 
 setuptools.setup(
     name = 'pyFUME', 
-    version = '0.0.5',
+    version = '0.1.0',
     author = 'Caro Fuchs',
     author_email = 'c.e.m.fuchs@tue.nl',
     description = 'A Python package for fuzzy model estimation',
-    long_description = open('README.txt').read(),
+    long_description = open('README.md').read(),
     keywords = ['fuzzy logic', 'fuzzy inference systems', 'fuzzy model','data-driven', 'model estimation', 'machine learning'],
     url='https://github.com/CaroFuchs/pyFUME',
     packages=setuptools.find_packages(),
@@ -17,4 +17,5 @@ setuptools.setup(
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.6',
+    install_requires=[ 'numpy', 'simpful', 'fst-pso' ],
 )

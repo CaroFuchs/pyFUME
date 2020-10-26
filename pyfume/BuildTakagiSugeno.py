@@ -63,7 +63,8 @@ class BuildTSFIS(object):
             extreme_values = self._antecedent_estimator._extreme_values,
             operators=kwargs["operators"], 
             save_simpful_code=False, 
-            fuzzy_sets_to_drop=what_to_drop)
+            fuzzy_sets_to_drop=what_to_drop,
+            sanitize_input=sanitize_input)
 
         self.dummymodel = simpbuilder.simpfulmodel
         
@@ -73,7 +74,7 @@ class BuildTSFIS(object):
         for i in range(0,len(self.x_train)):
             for j in range (0,len(self.variable_names)):
                 self.dummymodel.set_variable(self.variable_names[j], self.x_train[i,j])
-            firing_strengths.append(self.dummymodel.get_firing_strenghts())
+            firing_strengths.append(self.dummymodel.get_firing_strengths())
         self.firing_strengths=np.array(firing_strengths)
         
         
