@@ -8,7 +8,7 @@ from Tester import SugenoFISTester
 
 
 class BuildTSFIS(object):
-    def __init__(self, datapath, nr_clus, variable_names=None, merge_threshold=1.0, **kwargs):
+    def __init__(self, datapath, nr_clus, variable_names=None, merge_threshold=1.0, sanitize_input=True, **kwargs):
         self.datapath = datapath
         self.nr_clus = nr_clus
         self.variable_names = variable_names
@@ -69,7 +69,8 @@ class BuildTSFIS(object):
             extreme_values = self._antecedent_estimator._extreme_values,
             operators=kwargs["operators"], 
             save_simpful_code=kwargs['save_simpful_code'], 
-            fuzzy_sets_to_drop=what_to_drop)
+            fuzzy_sets_to_drop=what_to_drop,
+            sanitize_input=sanitize_input)
 
         self.model = simpbuilder.simpfulmodel
 
