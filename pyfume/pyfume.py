@@ -1,5 +1,13 @@
-from BuildTakagiSugeno import BuildTSFIS
-from Tester import SugenoFISTester
+from .BuildTakagiSugeno import *
+from .Clustering import *
+from .EstimateAntecendentSet import *
+from .EstimateConsequentParameters import *
+from .LoadData import *
+from .simpfulfier import *
+from .SimpfulModelBuilder import *
+from .Splitter import *
+from .Tester import *
+
 import numpy as np
 
 class pyFUME(object):
@@ -30,9 +38,21 @@ class pyFUME(object):
 
         if method=="RMSE":
             return self._get_RMSE()
+        elif method=="MAE":
+            return self._get_MAE()
+        elif method=="MAPE":
+            return self._get_MAPE()
+        elif method=="RMSE":
+            return self._get_RMSE()
         else:
             # return self._get_MSE()
             raise Exception("Method '%s' not implemented yet" % (method))
+            
+    def predict_test_data(self):
+        #get the prediction for the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        pred = test.predict(variable_names=self.FIS.variable_names)
+        return pred
         
     def _get_RMSE(self):
 
@@ -41,8 +61,31 @@ class pyFUME(object):
         RMSE = test.calculate_RMSE(variable_names=self.FIS.variable_names)
         #RMSE = list(RMSE.values())
         #print('The RMSE of the fuzzy system is', RMSE)
-        return dict(RMSE)
+        return RMSE
+    
+    def _get_MSE(self):
+
+        # Calculate the mean squared error of the model using the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        MSE = test.calculate_MSE(variable_names=self.FIS.variable_names)
+        #RMSE = list(RMSE.values())
+        #print('The RMSE of the fuzzy system is', RMSE)
+        return MSE
         
+    
+    def _get_MAE(self):
+
+        # Calculate the mean absolute error of the model using the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        MAE = test.calculate_MAE(variable_names=self.FIS.variable_names)
+        return MAE
+    
+    def _get_MAPE(self):
+
+        # Calculate the mean absolute percentage error of the model using the test data set
+        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
+        MAPE = test.calculate_MAPE(variable_names=self.FIS.variable_names)
+        return MAPE
 
     """
     def _get_RMSE(self):

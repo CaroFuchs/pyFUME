@@ -4,6 +4,7 @@ class DataLoader(object):
         def __init__(self, datapath, variable_names=None, normalize=False):
             if variable_names is None:
                 variable_names = np.genfromtxt(datapath, dtype='str', delimiter=',', max_rows=1)
+                print(variable_names)
                 self.output_name=variable_names[-1]
                 self.variable_names=variable_names[:-1]
                 self.data=np.loadtxt(datapath, delimiter=',', skiprows=1)

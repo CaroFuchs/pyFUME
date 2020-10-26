@@ -1,4 +1,4 @@
-from simpfulfier import SimpfulConverter
+from .simpfulfier import *
 
 class SugenoFISBuilder(object):
     """docstring for SugenoFISBuilder"""

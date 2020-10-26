@@ -1,10 +1,11 @@
-from LoadData import DataLoader
-from Splitter import DataSplitter
-from SimpfulModelBuilder import SugenoFISBuilder
-from Clustering import Clusterer
-from EstimateAntecendentSet import AntecedentEstimator
-from EstimateConsequentParameters import ConsequentEstimator
-from Tester import SugenoFISTester
+from .LoadData import DataLoader
+from .Splitter import DataSplitter
+from .SimpfulModelBuilder import SugenoFISBuilder
+from .Clustering import Clusterer
+from .EstimateAntecendentSet import AntecedentEstimator
+from .EstimateConsequentParameters import ConsequentEstimator
+from .Tester import SugenoFISTester
+import numpy as np
 
 
 class BuildTSFIS(object):
@@ -52,12 +53,36 @@ class BuildTSFIS(object):
         self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
         what_to_drop = self._antecedent_estimator._info_for_simplification
         
+
+        # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
+        if 'operators' not in kwargs.keys(): kwargs['operators'] = None
+        simpbuilder = SugenoFISBuilder(
+            self.antecedent_parameters, 
+            np.tile(1, (self.nr_clus, len(self.variable_names)+1)), 
+            self.variable_names, 
+            extreme_values = self._antecedent_estimator._extreme_values,
+            operators=kwargs["operators"], 
+            save_simpful_code=False, 
+            fuzzy_sets_to_drop=what_to_drop)
+
+        self.dummymodel = simpbuilder.simpfulmodel
+        
+        # Calculate the firing strengths for each rule for each data point 
+        firing_strengths=[]
+        print(self.variable_names)
+        for i in range(0,len(self.x_train)):
+            for j in range (0,len(self.variable_names)):
+                self.dummymodel.set_variable(self.variable_names[j], self.x_train[i,j])
+            firing_strengths.append(self.dummymodel.get_firing_strenghts())
+        self.firing_strengths=np.array(firing_strengths)
+        
+        
         # Estimate the parameters of the consequent (default: global fitting)
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = True  
-        ce = ConsequentEstimator(self.x_train, self.y_train, self.partition_matrix)
-        self.consequent_parameters = ce.suglms(self.x_train, self.y_train, self.partition_matrix, 
+        ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths)
+        self.consequent_parameters = ce.suglms(self.x_train, self.y_train, self.firing_strengths, 
                                                global_fit=kwargs['global_fit'])
-        
+
         # Build a first-order Takagi-Sugeno model using Simpful
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
@@ -73,11 +98,3 @@ class BuildTSFIS(object):
             sanitize_input=sanitize_input)
 
         self.model = simpbuilder.simpfulmodel
-
-        """        
-        # Calculate the mean squared error of the model using the test data set
-        test = SugenoFISTester(self.model, self.x_test,self.y_test)
-        RMSE = test.calculate_RMSE(variable_names=self.variable_names)
-        self.RMSE = list(RMSE.values())
-        print('The RMSE of the fuzzy system is', self.RMSE)
-        """
