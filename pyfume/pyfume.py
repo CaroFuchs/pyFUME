@@ -1,4 +1,4 @@
-from .BuildTakagiSugeno import BuildTSFIS
+from .BuildTakagiSugeno import *
 from .Clustering import *
 from .EstimateAntecendentSet import *
 from .EstimateConsequentParameters import *
@@ -11,18 +11,15 @@ from .Tester import *
 import numpy as np
 
 class pyFUME(object):
-    def __init__(self, datapath, nr_clus, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., sanitize_input=True, **kwargs):
+    def __init__(self, datapath, nr_clus, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., **kwargs):
         self.datapath=datapath
         self.nr_clus=nr_clus
         self.method=method
         self.dropped_fuzzy_sets = 0
-        self._sanitize_input = sanitize_input
-
-        if sanitize_input:
-            print (" * Sanitization of variable names: engaged")
+        #self.variable_names=variable_names
 
         if method=='Takagi-Sugeno' or method=='Sugeno':
-            self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, merge_threshold=merge_threshold, sanitize_input=sanitize_input, **kwargs)
+            self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, merge_threshold=merge_threshold, **kwargs)
             self.dropped_fuzzy_sets = self.FIS._antecedent_estimator.get_number_of_dropped_fuzzy_sets()
         else:
             raise Exception ("This modeling technique has not yet been implemented.")
@@ -87,7 +84,21 @@ class pyFUME(object):
         MAPE = test.calculate_MAPE(variable_names=self.FIS.variable_names)
         return MAPE
 
-    
+    """
+    def _get_RMSE(self):
+        if self.FIS.error is None:
+            print ("ERROR: RMSE was not calculated correctly, aborting.")
+            exit(-1)
+        else:
+            return self.FIS.RMSE
+    """ 
+
 if __name__=='__main__':
-    
-    pass
+    from numpy.random import seed
+    seed(4)
+   
+    FIS = pyFUME(datapath='Concrete_data.csv', nr_clus=3, method='Takagi-Sugeno',
+     merge_threshold=.8, operators=None)
+    print ("The calculated error is:", FIS.calculate_error())
+
+    FIS.get_model().produce_figure("bla.pdf")

@@ -66,7 +66,10 @@ class ConsequentEstimator(object):
         if nf == 1:
            global_fit = False
         
-        if global_fit == True:                                          # Global least mean squares estimates 
+        if global_fit == True:                # Global least mean squares estimates 
+
+            # Still under construction!
+            
             # Auxillary variables
             f1 = x.flatten()
             s = np.matlib.repmat(f1,nf,1).T

@@ -9,7 +9,7 @@ import numpy as np
 
 
 class BuildTSFIS(object):
-    def __init__(self, datapath, nr_clus, variable_names=None, merge_threshold=1.0, sanitize_input=True, **kwargs):
+    def __init__(self, datapath, nr_clus, variable_names=None, merge_threshold=1.0, **kwargs):
         self.datapath = datapath
         self.nr_clus = nr_clus
         self.variable_names = variable_names
@@ -63,8 +63,7 @@ class BuildTSFIS(object):
             extreme_values = self._antecedent_estimator._extreme_values,
             operators=kwargs["operators"], 
             save_simpful_code=False, 
-            fuzzy_sets_to_drop=what_to_drop,
-            sanitize_input=sanitize_input)
+            fuzzy_sets_to_drop=what_to_drop)
 
         self.dummymodel = simpbuilder.simpfulmodel
         
@@ -79,7 +78,7 @@ class BuildTSFIS(object):
         
         
         # Estimate the parameters of the consequent (default: global fitting)
-        if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = True  
+        if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths)
         self.consequent_parameters = ce.suglms(self.x_train, self.y_train, self.firing_strengths, 
                                                global_fit=kwargs['global_fit'])
@@ -95,7 +94,6 @@ class BuildTSFIS(object):
             extreme_values = self._antecedent_estimator._extreme_values,
             operators=kwargs["operators"], 
             save_simpful_code=kwargs['save_simpful_code'], 
-            fuzzy_sets_to_drop=what_to_drop,
-            sanitize_input=sanitize_input)
+            fuzzy_sets_to_drop=what_to_drop)
 
         self.model = simpbuilder.simpfulmodel
