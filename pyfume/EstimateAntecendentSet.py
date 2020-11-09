@@ -227,7 +227,7 @@ class AntecedentEstimator(object):
 			
 			# Fit parameters to the data using least squares
 #			print('mu=', mu, 'sig=', sig)
-			param, _ = curve_fit(self.gaussmf, x, mf, p0 = [mu, sig], maxfev = 10000)
+			param, _ = curve_fit(self.gaussmf, x, mf, p0 = [mu, sig], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev = 10000)
 	   
 		elif mf_shape == 'gauss2':
 			# Determine initial parameters
@@ -243,7 +243,7 @@ class AntecedentEstimator(object):
 			
 			# Fit parameters to the data using least squares
 #			print('mu1',mu1,'sig1',sig1,'mu2',mu2,'sig2',sig2)
-			param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], maxfev=1000)
+			param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], bounds=((-np.inf, 0, -np.inf, 0), (np.inf, np.inf, np.inf, np.inf)), maxfev=1000)
 			
 		elif mf_shape == 'sigmf':
 			# Determine initial parameters

@@ -17,7 +17,7 @@ class DataLoader(object):
             
             if normalize=='minmax' or normalize=='linear' or normalize==True:
                 self.dataX = (self.dataX - np.abs(self.dataX).min(axis=0)) / (np.abs(self.dataX).max(axis=0)-np.abs(self.dataX).min(axis=0))
-
+                
             elif normalize == 'zscore':
                 self.dataX = (self.dataX - self.dataX.mean(axis=0)) / self.dataX.std(axis=0)
             
