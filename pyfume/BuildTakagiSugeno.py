@@ -27,6 +27,7 @@ class BuildTSFIS(object):
         self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dl.dataX, dl.dataY)
 
         # Perform feature selection if requested
+        if 'feature_selection' not in kwargs.keys(): kwargs['feature_selection'] = False
         if kwargs['feature_selection'] == True:
             fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names)
             
