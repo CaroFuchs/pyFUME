@@ -10,7 +10,7 @@ class ConsequentEstimator(object):
         self.y_train=y_train
         self.firing_strengths=firing_strengths
         
-    def suglms(self, x_train, y_train, firing_strengths, global_fit=True, df=0):
+    def suglms(self, x_train, y_train, firing_strengths, global_fit=False, df=0):
         # SUGLMS estimates the consequent parameters in the Sugeno-Takagi model
         #	 using least squares.
         #

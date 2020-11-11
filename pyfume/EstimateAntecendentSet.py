@@ -8,7 +8,7 @@ def is_complete(G):
 	return H.size() == n*(n-1)/2
 
 class AntecedentEstimator(object):
-	def __init__(self, x_train, partition_matrix, mf_shape='gauss'):
+	def __init__(self, x_train, partition_matrix):
 		self.xtrain = x_train 
 		self.partition_matrix = partition_matrix
 		self._info_for_simplification = None
@@ -21,14 +21,13 @@ class AntecedentEstimator(object):
 		# mf_list is structured as follows:
 		# - an outer list of V variables
 		# - each item of the outer list contains C fuzzy set, one for each cluster
-
 		number_of_variables = self.xtrain.shape[1]
 		for i in range(0, number_of_variables):
 			xin = self.xtrain[:,i]
 			for j in range(0, self.partition_matrix.shape[1]):
 				mfin = self.partition_matrix[:,j]
-				mf, xx = self.convexMF(xin, mfin)
-				prm = self.fitMF(xx, mf, mf_shape)
+				mf, xx = self.convexMF(xin=xin, mfin=mfin)
+				prm = self.fitMF(x=xx, mf=mf, mf_shape=mf_shape)
 				mf_list.append(prm) 
 
 		self._check_similarities(mf_list, number_of_variables, threshold=merge_threshold)
@@ -206,7 +205,7 @@ class AntecedentEstimator(object):
 		x=xval;
 		return mf, x
 	
-	def fitMF(self,x,mf,mf_shape='gauss2'):
+	def fitMF(self,x,mf,mf_shape='gauss'):
 		# Fits parametrized membership functions to a set of pointwise defined 
 		# membership values.
 		#
@@ -218,7 +217,6 @@ class AntecedentEstimator(object):
 		#
 		# Output:
 		# param: matrix of membership function parameters
-		
 	
 		if mf_shape == 'gauss':
 			# Determine initial parameters
@@ -243,7 +241,7 @@ class AntecedentEstimator(object):
 			
 			# Fit parameters to the data using least squares
 #			print('mu1',mu1,'sig1',sig1,'mu2',mu2,'sig2',sig2)
-			param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], bounds=((-np.inf, 0, -np.inf, 0), (np.inf, np.inf, np.inf, np.inf)), maxfev=1000)
+			param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev=1000)
 			
 		elif mf_shape == 'sigmf':
 			# Determine initial parameters

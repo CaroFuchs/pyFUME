@@ -9,7 +9,7 @@ class SimpfulConverter(object):
         input_variables_names,
         consequents_matrix,
         fuzzy_sets,
-        fuzzy_sets_to_drop=None,
+        fuzzy_sets_to_drop=dict,
         extreme_values = None,
         operators = None
         ):

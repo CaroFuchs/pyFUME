@@ -37,7 +37,7 @@ class FeatureSelector(object):
         
         # Create a training and valiadation set for the feature selection phase
         ds = DataSplitter(self.dataX, self.dataY)
-        x_feat, y_feat, x_val, y_val = ds.holdout()
+        x_feat, y_feat, x_val, y_val = ds.holdout(self.dataX, self.dataY)
         
         # Set initial values for the MAEs
         old_MAE=np.inf

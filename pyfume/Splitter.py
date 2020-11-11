@@ -8,15 +8,15 @@ class DataSplitter(object):
         self.dataX=dataX
         self.dataY=dataY
         
-    def holdout(self, percentage_training=0.75,seed=None):
-        universe=set(range(0,np.shape(self.dataX)[0]))
-        trn=np.random.choice(self.dataX.shape[0], int(round(percentage_training*self.dataX.shape[0])), replace=False)
+    def holdout(self,dataX,dataY, percentage_training=0.75,seed=None):
+        universe=set(range(0,np.shape(dataX)[0]))
+        trn=np.random.choice(dataX.shape[0], int(round(percentage_training*dataX.shape[0])), replace=False)
         tst=list(universe-set(trn))
     
-        x_train=self.dataX[trn]
-        x_test=self.dataX[tst]
-        y_train=self.dataY[trn]
-        y_test=self.dataY[tst]
+        x_train=dataX[trn]
+        x_test=dataX[tst]
+        y_train=dataY[trn]
+        y_test=dataY[tst]
         
         return x_train, y_train, x_test, y_test
 
