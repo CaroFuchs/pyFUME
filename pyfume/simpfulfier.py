@@ -9,7 +9,7 @@ class SimpfulConverter(object):
         input_variables_names,
         consequents_matrix,
         fuzzy_sets,
-        fuzzy_sets_to_drop=dict,
+        fuzzy_sets_to_drop=None,
         extreme_values = None,
         operators = None
         ):
@@ -20,6 +20,9 @@ class SimpfulConverter(object):
         self._fuzzy_sets = fuzzy_sets
         self._fuzzy_sets_to_drop = fuzzy_sets_to_drop
         self._extreme_values = extreme_values
+
+        if self._fuzzy_sets_to_drop==None:
+            self._fuzzy_sets_to_drop={}
 
         assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
 
@@ -108,8 +111,10 @@ class SimpfulConverter(object):
                 #print ( self._fuzzy_sets[j] )
                 j += 1
                 chunk += "\n"
-
-            chunk += "MF_%s = LinguisticVariable([%s], concept='%s' , universe_of_discourse=%s)\n" % (var, ", ".join(subchunk), var, self._extreme_values[num_var] )
+            if self._extreme_values == None:
+                chunk += "MF_%s = LinguisticVariable([%s], concept='%s')\n" % (var, ", ".join(subchunk), var )
+            else:
+                chunk += "MF_%s = LinguisticVariable([%s], concept='%s' , universe_of_discourse=%s)\n" % (var, ", ".join(subchunk), var, self._extreme_values[num_var] )
             chunk += "FS.add_linguistic_variable('%s', MF_%s)\n\n" % (var, var)
 
         return chunk
