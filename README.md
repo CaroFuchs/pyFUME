@@ -11,7 +11,7 @@ Users that wish to deviate from  the  default  settings  can  use  the code  as 
 
 ### Example 1
 ```
-from pyfume import *
+from pyfume import pyFUME
 
 # Set the path to the data and choose the number of clusters
 path='./Concrete_data.csv'
@@ -21,7 +21,8 @@ nc=3
 FIS = pyFUME(datapath=path, nr_clus=nc)
 
 # Calculate and print the accuracy of the generated model
-print ("The calculated error is:", FIS.calculate_error())
+MAE=FIS.calculate_error(method="MAE")
+print ("The estimated error of the developed model is:", MAE)
 
 ## Use the FIS to predict the compressive strength of a new concrete sample
 # Extract the model from the FIS object
@@ -56,8 +57,8 @@ from Tester import SugenoFISTester
 path='./Concrete_data.csv'
 nr_clus=3
 
-# Load and normalize the data
-dl=DataLoader(path,normalize=1)
+# Load and normalize the data using min-max normalization
+dl=DataLoader(path,normalize='minmax')
 variable_names=dl.variable_names 
 dataX=dl.dataX
 dataY=dl.dataY
@@ -66,25 +67,36 @@ dataY=dl.dataY
 # and test set (default: 25%).
 ds = DataSplitter(dl.dataX,dl.dataY)
 x_train, y_train, x_test, y_test = ds.holdout(dataX, dataY)
-        
+
+# Select features relevant to the problem
+fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names)
+selected_feature_indices, variable_names=fs.wrapper()
+
+# Adapt the training and test input data after feature selection
+x_train = x_train[:, selected_feature_indices]
+x_test = x_test[:, selected_feature_indices]
+      
 # Cluster the training data (in input-output space) using FCM with default settings
 cl = Clusterer(x_train, y_train, nr_clus)
 cluster_centers, partition_matrix, _ = cl.cluster(method="fcm")
      
 # Estimate the membership funtions of the system (default: mf_shape = gaussian)
 ae = AntecedentEstimator(x_train, partition_matrix)
-antecedent_parameters = ae.determineMF(x_train, partition_matrix)
+antecedent_parameters = ae.determineMF()
         
-# Estimate the parameters of the consequent (default: global fitting = True)
+# Estimate the parameters of the consequent functions
 ce = ConsequentEstimator(x_train, y_train, partition_matrix)
 consequent_parameters = ce.suglms(x_train, y_train, partition_matrix)
         
 # Build a first-order Takagi-Sugeno model using Simpful
+# Specify the optional 'extreme_values' argument to specify the universe of discourse of the input variables if you which to use Simpful
 simpbuilder = SugenoFISBuilder(antecedent_parameters, consequent_parameters, variable_names)
 model = simpbuilder.get_model()
         
 # Calculate the mean squared error (MSE) of the model using the test data set
-print ("The calculated error is:", model.calculate_error())
+MAE = test.calculate_MAE(variable_names=variable_names)
+
+print('The mean absolute error of the created model is', MAE)
 ```
 
 ## Installation
