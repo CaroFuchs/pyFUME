@@ -7,7 +7,7 @@ pyFUME also provides facilities for the evaluation of performance from a statist
 ## Usage
 For the following example, we use the Concrete Compressive Strength data set [2] as can be found in the UCI repository.
 The  code  in  Example 1  is  simple  and  easy  to  use,  making it  ideal  to  use  for  practitioners  who  wish  to  use  the  default settings or only wish to use few non-default settings using additional input arguments (Example 2). 
-Users that wish to deviate from  the  default  settings  can  use  the code  as shown  in  Example 2.
+Users that wish to deviate from  the  default  settings  can  use  the code  as shown  in  Example 3.
 
 ### Example 1
 ```
