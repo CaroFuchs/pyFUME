@@ -6,7 +6,7 @@ pyFUME also provides facilities for the evaluation of performance from a statist
 
 ## Usage
 For the following example, we use the Concrete Compressive Strength data set [2] as can be found in the UCI repository.
-The  code  in  Example 1  is  simple  and  easy  to  use,  making it  ideal  to  use  for  practitioners  who  wish  to  use  the  default settings or only wish to use few non-default settings. 
+The  code  in  Example 1  is  simple  and  easy  to  use,  making it  ideal  to  use  for  practitioners  who  wish  to  use  the  default settings or only wish to use few non-default settings using additional input arguments (Example 2). 
 Users that wish to deviate from  the  default  settings  can  use  the code  as shown  in  Example 2.
 
 ### Example 1
@@ -43,6 +43,39 @@ print(model.Sugeno_inference(['OUTPUT']))
 ```
 
 ### Example 2
+```
+from pyfume import pyFUME
+
+# Set the path to the data and choose the number of clusters
+path='./Concrete_data.csv'
+nc=3
+
+# Generate the Takagi-Sugeno FIS
+FIS = pyFUME(datapath=path, nr_clus=nc, normaliztion='minmax', feature_selection=True)
+
+# Calculate and print the accuracy of the generated model
+MAE=FIS.calculate_error(method="MAE")
+print ("The estimated error of the developed model is:", MAE)
+
+## Use the FIS to predict the compressive strength of a new concrete sample
+# Extract the model from the FIS object
+model=FIS.get_model()
+
+# Set the values for each variable
+model.set_variable('Cement', 300.0)
+model.set_variable('BlastFurnaceSlag', 50.0)
+model.set_variable('FlyAsh', 0.0)
+model.set_variable('Water', 175.0)
+model.set_variable('Superplasticizer',0.7)
+model.set_variable('CoarseAggregate', 900.0)
+model.set_variable('FineAggregate', 600.0)
+model.set_variable('Age', 45.0)
+
+# Perform inference and print predicted value
+print(model.Sugeno_inference(['OUTPUT']))
+```
+
+### Example 3
 
 ```
 from LoadData import DataLoader
@@ -88,8 +121,9 @@ antecedent_parameters = ae.determineMF()
 ce = ConsequentEstimator(x_train, y_train, partition_matrix)
 consequent_parameters = ce.suglms(x_train, y_train, partition_matrix)
         
-# Build a first-order Takagi-Sugeno model using Simpful
-# Specify the optional 'extreme_values' argument to specify the universe of discourse of the input variables if you which to use Simpful
+# Build a first-order Takagi-Sugeno model using Simpful. Specify the optional 
+# 'extreme_values' argument to specify the universe of discourse of the input
+# variables if you which to use Simpful's membership function plot functionalities.
 simpbuilder = SugenoFISBuilder(antecedent_parameters, consequent_parameters, variable_names)
 model = simpbuilder.get_model()
         
