@@ -15,7 +15,7 @@ class FeatureSelector(object):
        
 
                             
-    def wrapper(self, feature_selection_stop=0.005,**kwargs):
+    def wrapper(self,**kwargs):
         
         # Check settings and complete with defaukt settings when needed
         if 'merge_threshold' not in kwargs.keys(): kwargs['merge_threshold'] = 1.0

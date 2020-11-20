@@ -5,7 +5,8 @@ class SugenoFISBuilder(object):
     def __init__(self, antecedent_sets, consequent_parameters, 
         variable_names, extreme_values=None, operators=None, save_simpful_code=True, fuzzy_sets_to_drop=None):
         
-        super(SugenoFISBuilder, self).__init__()
+        #super(SugenoFISBuilder, self).__init__()
+        super().__init__()
 
         self._SC = SimpfulConverter(
             input_variables_names = variable_names,

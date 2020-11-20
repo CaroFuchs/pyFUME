@@ -13,7 +13,7 @@ class SimpfulConverter(object):
         extreme_values = None,
         operators = None
         ):
-        super(SimpfulConverter, self).__init__()
+        super().__init__()
         self._input_variables = input_variables_names
         self._consequents_matrix = consequents_matrix
         self._clusters = len(self._consequents_matrix)
