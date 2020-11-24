@@ -6,7 +6,7 @@ import numpy as np
 class SugenoFISTester(object):
     """docstring for SugenoFISTester"""
     def __init__(self, model, test_data, golden_standard):
-        super(SugenoFISTester, self).__init__()
+        super().__init__()
         self._model_to_test = model
         self._data_to_test = test_data
         self._golden_standard = golden_standard
@@ -17,8 +17,12 @@ class SugenoFISTester(object):
             for i, variable in enumerate(variable_names):
                 self._model_to_test.set_variable(variable, sample[i])
             result.append(self._model_to_test.Sugeno_inference().get('OUTPUT'))
-        result = np.array(result) 
-        error = self._golden_standard - result
+        result = np.array(result)
+        if self._golden_standard != None:
+            error = self._golden_standard - result
+        else:
+            error = np.nan
+            print('The true labels (golden standard) was not provided, so the error could not be calculatated.')
         return result, error
 
     def calculate_RMSE(self, variable_names, list_of_outputs=['OUTPUT']):

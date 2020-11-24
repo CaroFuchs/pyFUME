@@ -59,7 +59,7 @@ class Clusterer(object):
 
             centers, partition_matrix, typicality_matrix, jm = self._pfcm(data=self.data, n_clusters=self.nr_clus, m=m, n=n, max_iter=max_iter, error=error, a=a, b=b)    
 
-        elif method == "fstpso":
+        elif method == "fst-pso":
             try:
                 max_iter = kwargs["fstpso_max_iter"]
             except:

@@ -50,6 +50,12 @@ class pyFUME(object):
         test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
         pred = test.predict(variable_names=self.FIS.variable_names)
         return pred
+    
+    def predict_label(self, xdata, variable_names, ydata=None):
+        #get the prediction for a new data set
+        test = SugenoFISTester(model=self.FIS.model, test_data=xdata, golden_standard=ydata)
+        pred = test.predict(variable_names=variable_names)
+        return pred
         
     def _get_RMSE(self):
 

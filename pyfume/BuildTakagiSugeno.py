@@ -27,11 +27,15 @@ class BuildTSFIS(object):
         self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dl.dataX, dl.dataY)
 
         # Perform feature selection if requested
-        if 'feature_selection' not in kwargs.keys(): kwargs['feature_selection'] = False
-        if kwargs['feature_selection'] == True:
+        if 'feature_selection' not in kwargs.keys(): kwargs['feature_selection'] = None
+        if kwargs['feature_selection'] != None:
             fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names)
             
-            self.selected_feature_indices, self.variable_names=fs.wrapper(feature_selection_stop=0.05)
+            if kwargs['feature_selection'] == 'wrapper':
+                self.selected_feature_indices, self.variable_names=fs.wrapper(feature_selection_stop=0.05)
+            elif kwargs['feature_selection'] == 'fst-pso':
+                self.selected_feature_indices, self.variable_names= fs.fst_pso_feature_selection(max_iter=10) 
+            
             self.x_train = self.x_train[:, self.selected_feature_indices]
             self.x_test = self.x_test[:, self.selected_feature_indices]
             
@@ -47,9 +51,9 @@ class BuildTSFIS(object):
             if 'fcm_error' not in kwargs.keys(): kwargs['fcm_error'] = 0.005
             self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
                 fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
-        elif kwargs['cluster_method'] == 'fstpso':
+        elif kwargs['cluster_method'] == 'fst-pso':
             if 'fstpso_n_particles' not in kwargs.keys(): kwargs['fstpso_n_particles'] = None
-            if 'fstpso_maxiter' not in kwargs.keys(): kwargs['fstpso_maxiter'] = 100
+            if 'fstpso_max_iter' not in kwargs.keys(): kwargs['fstpso_max_iter'] = 100
             if 'fstpso_path_fit_dump' not in kwargs.keys(): kwargs['fstpso_path_fit_dump'] = None
             if 'fstpso_path_sol_dump' not in kwargs.keys(): kwargs['fstpso_path_sol_dump'] = None
             self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
