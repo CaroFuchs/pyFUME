@@ -18,7 +18,7 @@ class SugenoFISTester(object):
                 self._model_to_test.set_variable(variable, sample[i])
             result.append(self._model_to_test.Sugeno_inference().get('OUTPUT'))
         result = np.array(result)
-        if self._golden_standard != None:
+        if self._golden_standard is not  None:
             error = self._golden_standard - result
         else:
             error = np.nan
