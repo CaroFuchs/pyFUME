@@ -113,8 +113,6 @@ class FeatureSelector(object):
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         
-        
-        
         # Cluster the training data (in input-output space)
         cl = Clusterer(x_train, y_train, nr_clus)               
         
