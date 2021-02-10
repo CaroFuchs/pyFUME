@@ -36,7 +36,7 @@ class pyFUME(object):
 
     def calculate_error(self, method="RMSE"):
 
-        if method=="RMSE":
+        if method=="RMSE"
             return self._get_RMSE()
         elif method=="MAE":
             return self._get_MAE()
@@ -51,18 +51,25 @@ class pyFUME(object):
     def predict_test_data(self):
         #get the prediction for the test data set
         test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, variable_names=self.FIS.variable_names, golden_standard=self.FIS.y_test)
-        pred = test.predict()
+        pred, _ = test.predict()
         return pred
     
-    def predict_label(self, xdata, variable_names, ydata=None):
+    def predict_label(self, xdata, ydata=None, error_metric=None):
         #get the prediction for a new data set
         model = self.get_model()
-        test = SugenoFISTester(model=model, test_data=xdata, golden_standard=ydata, variable_names=variable_names)
-        pred = test.predict()
-        return pred
+        test = SugenoFISTester(model=model, test_data=xdata, golden_standard=ydata, variable_names=self.FIS.variable_names)
+        pred, _ = test.predict()
+
+        if error_metric == None
+            return pred
+
+        elif error_metric != None and ydata!=None
+            metric= test.calculate_performance(metric=error_metric)
+            return pred, metric
+
 
     def get_firing_strengths(self, data, normalize=False):
-        # Calculate the firing strnegths
+        # Calculate the firing strengths
         fsc=FireStrengthCalculator(self.FIS.antecedent_parameters, self.FIS.nr_clus, self.FIS.variable_names)
         firing_strengths = fsc.calculate_fire_strength(data)
         if normalize == True:
