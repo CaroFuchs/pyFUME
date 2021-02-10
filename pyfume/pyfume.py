@@ -54,19 +54,19 @@ class pyFUME(object):
         pred, _ = test.predict()
         return pred
     
-    def predict_label(self, xdata, ydata=None, error_metric=None):
+    def predict_label(self, xdata, ydata=None):
         #get the prediction for a new data set
         model = self.get_model()
         test = SugenoFISTester(model=model, test_data=xdata, golden_standard=ydata, variable_names=self.FIS.variable_names)
         pred, _ = test.predict()
+        return pred
 
-        if error_metric == None
-            return pred
-
-        elif error_metric != None and ydata!=None
-            metric= test.calculate_performance(metric=error_metric)
-            return pred, metric
-
+    def test_model(self, xdata, ydata, error_metric='MAE'):
+        #get the prediction for a new data set
+        model = self.get_model()
+        test = SugenoFISTester(model=model, test_data=xdata, golden_standard=ydata, variable_names=self.FIS.variable_names)
+        metric= test.calculate_performance(metric=error_metric)
+        return metric
 
     def get_firing_strengths(self, data, normalize=False):
         # Calculate the firing strengths
