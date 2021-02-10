@@ -150,10 +150,10 @@ class BuildTSFIS(object):
             print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
             
             #Create lists with test indices for each fold.
-            #self.fold_indices = ds.kfold(data_length=len(dl.dataX), number_of_folds=kwargs['number_of_folds'])
-            import pickle
-            import pandas as pd
-            
+            self.fold_indices = ds.kfold(data_length=len(dl.dataX), number_of_folds=kwargs['number_of_folds'])
+            # import pickle
+            # import pandas as pd
+
             #fold_indices=pd.read_csv('./fold_indices.csv', header=None)  
             #self.fold_indices=fold_indices.to_numpy()
                         
