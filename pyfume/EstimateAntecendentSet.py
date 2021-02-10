@@ -8,6 +8,15 @@ def is_complete(G):
     return H.size() == n*(n-1)/2
 
 class AntecedentEstimator(object):
+    """
+        Creates a new antecedent estimator object.
+        
+        Args:
+            x_train: The input data.
+            partition_matrix: The partition matrix of the input data (generated 
+                by a clustering the data).
+    """ 
+    
     def __init__(self, x_train, partition_matrix):
         self.xtrain = x_train 
         self.partition_matrix = partition_matrix
@@ -15,7 +24,19 @@ class AntecedentEstimator(object):
         self._calculate_all_extreme_values()
                         
         
-    def determineMF(self, mf_shape='gauss', merge_threshold=1.):
+    def determineMF(self, mf_shape='gauss', merge_threshold=1.0):
+        """
+            Estimates the parameters of the membership functions that are used 
+            as antecedents of the fuzzy rules.
+            
+            Args:
+                mf_shape: The desired shape of the fuzzy sets. The user can choose
+                    from 'gauss' (gaussian), 'gauss2' (double gaussion) or 'sigmf' 
+                    (sigmoidal) (default = gauss).
+                merge_threshold: Threshold for the merging of fuzzy sets for 
+                    the GRABS approach. By default no merging takes place 
+                    (default = 1.0).
+        """         
         mf_list=[]
 
         # mf_list is structured as follows:
@@ -26,11 +47,12 @@ class AntecedentEstimator(object):
             xin = self.xtrain[:,i]
             for j in range(0, self.partition_matrix.shape[1]):
                 mfin = self.partition_matrix[:,j]
-                mf, xx = self.convexMF(xin=xin, mfin=mfin)
-                prm = self.fitMF(x=xx, mf=mf, mf_shape=mf_shape)
+                mf, xx = self._convexMF(xin=xin, mfin=mfin)
+                prm = self._fitMF(x=xx, mf=mf, mf_shape=mf_shape)
                 mf_list.append(prm) 
-
-        self._check_similarities(mf_list, number_of_variables, threshold=merge_threshold)
+        
+        if merge_threshold < 1.0:
+            self._check_similarities(mf_list, number_of_variables, threshold=merge_threshold)
 
         #print(self._info_for_simplification)
 
@@ -83,8 +105,8 @@ class AntecedentEstimator(object):
                         
                         from numpy import linspace, array
 
-                        first_cluster = array([self.gaussmf(x, params1[0], params1[1]) for x in points])
-                        second_cluster = array([self.gaussmf(x, params2[0], params2[1]) for x in points])
+                        first_cluster = array([self._gaussmf(x, params1[0], params1[1]) for x in points])
+                        second_cluster = array([self._gaussmf(x, params2[0], params2[1]) for x in points])
 
                         intersection = sum([min(x,y) for x,y in zip(first_cluster, second_cluster)])
                         union        = sum([max(x,y) for x,y in zip(first_cluster, second_cluster)])
@@ -140,7 +162,7 @@ class AntecedentEstimator(object):
         return S
             
        
-    def convexMF(self, xin, mfin, norm=1, nc=1000):
+    def _convexMF(self, xin, mfin, norm=1, nc=1000):
         
         # Calculates the convex membership function that envelopes a given set of
         # data points and their corresponding membership values. 
@@ -205,7 +227,7 @@ class AntecedentEstimator(object):
         x=xval;
         return mf, x
     
-    def fitMF(self,x,mf,mf_shape='gauss'):
+    def _fitMF(self,x,mf,mf_shape='gauss'):
         # Fits parametrized membership functions to a set of pointwise defined 
         # membership values.
         #
@@ -226,7 +248,7 @@ class AntecedentEstimator(object):
             
             # Fit parameters to the data using least squares
 #            print('mu=', mu, 'sig=', sig)
-            param, _ = curve_fit(self.gaussmf, x, mf, p0 = [mu, sig], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev = 10000)
+            param, _ = curve_fit(self._gaussmf, x, mf, p0 = [mu, sig], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev = 10000)
        
         elif mf_shape == 'gauss2':
             # Determine initial parameters
@@ -242,7 +264,7 @@ class AntecedentEstimator(object):
             
             # Fit parameters to the data using least squares
 #            print('mu1',mu1,'sig1',sig1,'mu2',mu2,'sig2',sig2)
-            param, _ = curve_fit(self.gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev=1000)
+            param, _ = curve_fit(self._gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev=1000)
             
         elif mf_shape == 'sigmf':
             # Determine initial parameters
@@ -253,11 +275,11 @@ class AntecedentEstimator(object):
                 c = x[mf<=0.5][0]
                 s = -1
             # Fit parameters of the function to the data using non-linear least squares           
-            param, _ = curve_fit(self.sigmf, x, mf, p0 = [c, s])
+            param, _ = curve_fit(self._sigmf, x, mf, p0 = [c, s])
         
         return mf_shape, param
         
-    def gaussmf(self,x, mu, sigma, a=1):
+    def _gaussmf(self,x, mu, sigma, a=1):
         # x:  (1D array)
         # mu: Center of the bell curve (float)
         # sigma: Width of the bell curve (float)
@@ -265,7 +287,7 @@ class AntecedentEstimator(object):
         return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
     
     
-    def gauss2mf(self,x, mu1, sigma1, mu2, sigma2):
+    def _gauss2mf(self,x, mu1, sigma1, mu2, sigma2):
         # x: Data
         # mu1: Center of the leftside bell curve
         # sigma1: Standard deviation that determines the width of the leftside bell curve
@@ -274,11 +296,11 @@ class AntecedentEstimator(object):
         y = np.ones(len(x))
         idx1 = x <= mu1
         idx2 = x > mu2
-        y[idx1] = self.gaussmf(x[idx1], mu1, sigma1)
-        y[idx2] = self.gaussmf(x[idx2], mu2, sigma2)
+        y[idx1] = self._gaussmf(x[idx1], mu1, sigma1)
+        y[idx2] = self._gaussmf(x[idx2], mu2, sigma2)
         return y
     
-    def sigmf(self,x, c, s):
+    def _sigmf(self,x, c, s):
         # x: data
         # b: x where mf is 0.5
         # c: Controls 'width' of the sigmoidal region about `b` (magnitude); also

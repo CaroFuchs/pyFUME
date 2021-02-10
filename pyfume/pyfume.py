@@ -6,7 +6,9 @@ from .LoadData import *
 from .simpfulfier import *
 from .SimpfulModelBuilder import *
 from .Splitter import *
-from .Tester import *
+from .Tester import SugenoFISTester
+from .FireStrengthCalculator import FireStrengthCalculator
+
 
 import numpy as np
 
@@ -20,7 +22,8 @@ class pyFUME(object):
 
         if method=='Takagi-Sugeno' or method=='Sugeno':
             self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, merge_threshold=merge_threshold, **kwargs)
-            self.dropped_fuzzy_sets = self.FIS._antecedent_estimator.get_number_of_dropped_fuzzy_sets()
+            if merge_threshold < 1.0:
+                self.dropped_fuzzy_sets = self.FIS._antecedent_estimator.get_number_of_dropped_fuzzy_sets()
         else:
             raise Exception ("This modeling technique has not yet been implemented.")
 
@@ -47,57 +50,53 @@ class pyFUME(object):
             
     def predict_test_data(self):
         #get the prediction for the test data set
-        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
-        pred = test.predict(variable_names=self.FIS.variable_names)
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, variable_names=self.FIS.variable_names, golden_standard=self.FIS.y_test)
+        pred = test.predict()
         return pred
     
     def predict_label(self, xdata, variable_names, ydata=None):
         #get the prediction for a new data set
-        test = SugenoFISTester(model=self.FIS.model, test_data=xdata, golden_standard=ydata)
-        pred = test.predict(variable_names=variable_names)
+        model = self.get_model()
+        test = SugenoFISTester(model=model, test_data=xdata, golden_standard=ydata, variable_names=variable_names)
+        pred = test.predict()
         return pred
+
+    def get_firing_strengths(self, data, normalize=False):
+        # Calculate the firing strnegths
+        fsc=FireStrengthCalculator(self.FIS.antecedent_parameters, self.FIS.nr_clus, self.FIS.variable_names)
+        firing_strengths = fsc.calculate_fire_strength(data)
+        if normalize == True:
+            firing_strengths=firing_strengths/firing_strengths.sum(axis=1)[:,None]
+        return firing_strengths
         
     def _get_RMSE(self):
-
         # Calculate the mean squared error of the model using the test data set
-        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
-        RMSE = test.calculate_RMSE(variable_names=self.FIS.variable_names)
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
+        RMSE = test.calculate_RMSE()
         #RMSE = list(RMSE.values())
         #print('The RMSE of the fuzzy system is', RMSE)
         return RMSE
     
     def _get_MSE(self):
-
         # Calculate the mean squared error of the model using the test data set
-        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
-        MSE = test.calculate_MSE(variable_names=self.FIS.variable_names)
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
+        MSE = test.calculate_MSE()
         #RMSE = list(RMSE.values())
         #print('The RMSE of the fuzzy system is', RMSE)
         return MSE
         
     
     def _get_MAE(self):
-
         # Calculate the mean absolute error of the model using the test data set
-        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
-        MAE = test.calculate_MAE(variable_names=self.FIS.variable_names)
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, variable_names=self.FIS.variable_names, golden_standard=self.FIS.y_test)
+        MAE = test.calculate_MAE()
         return MAE
     
     def _get_MAPE(self):
-
         # Calculate the mean absolute percentage error of the model using the test data set
-        test = SugenoFISTester(self.FIS.model, self.FIS.x_test, self.FIS.y_test)
-        MAPE = test.calculate_MAPE(variable_names=self.FIS.variable_names)
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
+        MAPE = test.calculate_MAPE()
         return MAPE
-
-    """
-    def _get_RMSE(self):
-        if self.FIS.error is None:
-            print ("ERROR: RMSE was not calculated correctly, aborting.")
-            exit(-1)
-        else:
-            return self.FIS.RMSE
-    """ 
 
 if __name__=='__main__':
     from numpy.random import seed

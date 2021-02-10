@@ -5,43 +5,47 @@ import numpy.matlib
 import statsmodels.api as sm
 
 class ConsequentEstimator(object):
+    """
+        Creates a new consequent estimator object.
+        
+        Args:
+            x_train: The input data.
+            y_train: The output data (true label/golden standard).
+            firing_strengths: Matrix containing the degree to which each rule 
+                fires for each data instance.
+    """
+    
     def __init__(self, x_train, y_train, firing_strengths):
         self.x_train=x_train
         self.y_train=y_train
         self.firing_strengths=firing_strengths
         
-    def suglms(self, x_train, y_train, firing_strengths, global_fit=False, df=0):
-        # SUGLMS estimates the consequent parameters in the Sugeno-Takagi model
-        #	 using least squares.
-        #
-        #    Input:
-        #       X .....	input data matrix
-        #	    Y .....	output data vector
-        #       F ..... fuzzy partition matrix (membership degrees),
-        #		        optional, defaults to ones(size(y)) for
-        #		        which SUGLMS is a standard linear regression
-        #       DF ... default value returned when the sum of grades
-        #               equals to one (optional, defaults to 0)
-        #	    FLAG .. set to 1 to get local weighted LMS estimates
-        #    
-        #    Output:
-        #       P .....	consequents parameters for every cluster
-        #	    Ym ....	global model output for the given input data
-        #	    Yl ....	output of local submodels (corresponding to clusters)
-        #	    Ylm ...	output of local submodels with data corresponding to
-        #               degrees < 0.2 masked with NaN's (for plots)
-        #
-        #    Example:
-        #	x = (0:0.02:1)'; y = sin(7*x);
-        #       f = mgrade(x',mfequ(x,2,3))';
-        #       [p,ym,yl,ylm] = suglms([x ones(size(x))],y,f);
-        #	subplot(211); plot(x,ylm,'.',x,[y ym]); title('Fitting y = sin(7*x)')
-        #	subplot(212); plot(x,f); title('Membership functions')
-        # (c) Robert Babuska, 1994-95
+    def zero_order(self):
+        p=np.zeros((self.firing_strengths.shape[1]))
+        for clus in range(0,self.firing_strengths.shape[1]): 
+            fs=self.firing_strengths[:,clus]
+            fs = np.fmax(fs, np.finfo(np.float64).eps)        # avoid 0's in the matrix
+            normalized_weights=fs/fs.sum(0)
+            s=np.multiply(normalized_weights, self.y_train)
+            p[clus]=sum(s)
+        return p
+            
+    def suglms(self, global_fit=False, df=0):
+        """
+            Estimates the consequent parameters in the Sugeno-Takagi model
+            using least squares.
         
-        x=x_train.copy()
-        y=y_train.copy()
-        f=firing_strengths.copy()
+            Args:
+                df: default value returned when the sum of grades equals to one 
+                (default = 0).
+        
+            Returns
+                p: The parameters for the consequent function.
+        """
+        
+        x=self.x_train.copy()
+        y=self.y_train.copy()
+        f=self.firing_strengths.copy()
         
         # Check if input X contains one column of ones (for the constant). If not, add it.
         u=np.unique(x[:,-1])
@@ -98,7 +102,7 @@ class ConsequentEstimator(object):
             p=np.reshape(xx,(nf,nx), order='F')
         
             # Local models
-            yl = np.transpose(x).dot(np.transpose(p))						                    #
+            yl = np.transpose(x).dot(np.transpose(p))                                           #
             
             # Global model
             ym = x1.dot(p.flatten()) + df*NoRule
@@ -112,24 +116,6 @@ class ConsequentEstimator(object):
             p=np.zeros([nf,nx])
             
             for i in range (0,nf):
-                '''
-                # Weight the points with the firing strength of the rule
-                #W=np.sqrt(np.diag(f[:,i]))
-                W=np.array([f[:,i],]*nx).transpose()
-                x1 = np.multiply(W,x)
-                y1 = np.multiply(f[:,i],y)
-               
-                # Perform QR decomposition
-                Q,R = np.linalg.qr(x1)      # qr decomposition of x1
-                Qy = np.dot(Q.T,y1)         # computing Q^T*b (project by onto the range of x1)
-                
-                #perform least-squares
-                p[i] = np.linalg.solve(R,Qy)
-                
-                wls_model=sm.WLS(y, x, weights=f[:,i]) 
-                results = wls_model.fit()
-                p[i]=np.array(results.params)               
-        '''
                 # Select firing strength of the selected rule
                 w= f[:,i]
                 
@@ -144,7 +130,3 @@ class ConsequentEstimator(object):
                 p[i]=prm
                        
         return p #,ym,yl,ylm
-    
-    def sugfunc(self, x1, x2, a, b, c):
-        return a*x1 + b*x2 + c   
-    

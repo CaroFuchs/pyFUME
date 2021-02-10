@@ -9,7 +9,8 @@ class SimpfulConverter(object):
         input_variables_names,
         consequents_matrix,
         fuzzy_sets,
-        fuzzy_sets_to_drop=None,
+        model_order = 'first',
+        fuzzy_sets_to_drop = None,
         extreme_values = None,
         operators = None
         ):
@@ -18,13 +19,15 @@ class SimpfulConverter(object):
         self._consequents_matrix = consequents_matrix
         self._clusters = len(self._consequents_matrix)
         self._fuzzy_sets = fuzzy_sets
+        self._model_order = model_order
         self._fuzzy_sets_to_drop = fuzzy_sets_to_drop
         self._extreme_values = extreme_values
 
         if self._fuzzy_sets_to_drop==None:
             self._fuzzy_sets_to_drop={}
 
-        assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
+        if self._model_order == 'first':  
+            assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
 
         print(" * Detected %d rules / clusters" % self._clusters)
 
@@ -61,10 +64,16 @@ class SimpfulConverter(object):
         self._source_code.append("")
 
         # output functions
-        B = self._create_consequents()
-        for i in range(self._clusters):
-            self._source_code.append("FS.set_output_function('%s', '%s')" % ("fun%d" % (i+1),  B[i]))
-
+        
+        if self._model_order == 'first':
+            B = self._create_consequents()
+            for i in range(self._clusters):
+                self._source_code.append("FS.set_output_function('%s', '%s')" % ("fun%d" % (i+1),  B[i]))
+        elif self._model_order == 'zero':
+            for i in range(self._clusters):
+                self._source_code.append("FS.set_crisp_output_value('%s', %s)" % ("fun%d" % (i+1),  self._consequents_matrix[i]))
+        else:
+            raise Exception("Model order not supported,"+self._model_order)
         self._source_code.append("")
     
         # fuzzy sets and membership functions

@@ -1,12 +1,24 @@
 import numpy as np
 from scipy.spatial.distance import cdist
-from random import seed
+from scipy.linalg import norm
+
+#from random import seed
 
 # To do:
 # Give option to cluster in input or input-output space?
 # More clustering methods
 
 class Clusterer(object):
+    """
+        Creates a new clusterer object that can cluster the (training) data in 
+        the input-output feature space.
+        
+        Args:
+            x_train: The input data.
+            y_train: The output data (true label/golden standard).
+            nr_clus: Number of clusters that should be identified in the data.  
+    """ 
+    
     def __init__(self, x_train, y_train, nr_clus):
         self.x_train=x_train
         self.y_train=y_train
@@ -15,6 +27,21 @@ class Clusterer(object):
         
 
     def cluster(self, method="fcm", **kwargs):
+        """
+        Clusters the data using the clustering method as specified by the user.
+            
+        Args:
+                method: The method used for the clustering. The user can choose 
+                'fcm' (fuzzy c-means), 'fst-pso' (fst-pso based clustering) and 'gk' (Gustafson-Kessel).
+                **kwargs: Additional arguments to change settings of the clustering method.     
+                
+        Returns:    
+                centers: The location of the identified cluster centers.
+                partition_matrix: A matrix containing the cluster memberships of 
+                    each data point to each of the clusters.
+                jm: Fitness function of the best solution.
+        """ 
+    
         try:
             m = kwargs["m"]
         except:
@@ -35,6 +62,18 @@ class Clusterer(object):
 #                seed = None
             centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=m, max_iter=max_iter, error=error)
         
+        elif method== 'gk' or method == 'GK' or method == 'Gustafson-Kessel' or method == 'gustafson-kessel' or method == 'g-k':
+            try:
+                max_iter = kwargs["gk_max_iter"]
+            except:
+                max_iter=100
+            try:
+                error = kwargs["gk_error"]
+            except:
+                error = 0.005
+            centers, partition_matrix, jm =self._gk(max_iter=max_iter) 
+            print(partition_matrix)               
+
         elif method== "pfcm":
             try:
                 n = kwargs["pfcm_n"]
@@ -81,7 +120,7 @@ class Clusterer(object):
 
         return centers, partition_matrix, jm
 
-    def _fcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005, seed=None):
+    def _fcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005):
         #data: 2d array, size (N, S). N is the number of instances; S is the number of variables
         #n_clusters: number of clusters
         #m: fuzzy clustering coefficient
@@ -92,8 +131,6 @@ class Clusterer(object):
         n_instances = data.shape[0]
         
         #randomly initaliaze u
-        if seed != None:
-            np.random.seed(seed=seed)
         u = np.random.rand(n_instances, n_clusters)
         u = np.fmax(u, np.finfo(np.float64).eps)
         ut = u.T
@@ -143,7 +180,7 @@ class Clusterer(object):
         except:
             print("ERROR: please, pip install fst-pso to use this functionality.")
 
-        n_instances = data.shape[0]
+        #n_instances = data.shape[0]
         n_variables = data.shape[1]
 
         #set search space boundaries
@@ -207,42 +244,41 @@ class Clusterer(object):
 
         return centers, partition_matrix, jm
     
-    def _pfcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005, a=0.5, b=0.5, n=2, seed=None):
-        """
-        data: Dataset to be clustered, with size M-by-N, where M is the number of data points
-        and N is the number of coordinates for each data point.
-        c : Number of clusters
-        m: fuzzy clustering coefficient (default = 2)
-        max_iter: Maximum number of iterations (default = 1000)
-        error : stopping criterion (default=0.005)
-        a: Relative importane of fuzzy membership (default = 0.5)
-        b: Relative importane of typicality values (default = 0.5) 
-        n: User-defined constant n (default = 2)
+    def _pfcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005, a=0.5, b=0.5, n=2):
+        
+        #data: Dataset to be clustered, with size M-by-N, where M is the number of data points
+        #and N is the number of coordinates for each data point.
+        #c : Number of clusters
+        #m: fuzzy clustering coefficient (default = 2)
+        #max_iter: Maximum number of iterations (default = 1000)
+        #error : stopping criterion (default=0.005)
+        #a: Relative importane of fuzzy membership (default = 0.5)
+        #b: Relative importane of typicality values (default = 0.5) 
+        #n: User-defined constant n (default = 2)
 
-        Return values:
-        centers: The locations of the found clusters centers
-        partition_matrix: Partition matrix
-        typicality_matrix: Typicality Matrix
-        jm: The objective funtion for U and T
-        """
+        #Return values:
+        #centers: The locations of the found clusters centers
+        #partition_matrix: Partition matrix
+        #typicality_matrix: Typicality Matrix
+        #jm: The objective funtion for U and T
+        
 
         # Randomly initiaize the partitioning matrix and typicality matrix
-        if seed != None:
-            np.random.seed(seed=seed)
-        u = np.random.rand(n_instanes, n_clusters)
-        u = np.fmax(u, np.finfo(np.float64).eps)        # avoid 0's in the matrix
-        t = np.random.rand(n_instanes, n_clusters)
-        t = np.fmax(t, np.finfo(np.float64).eps)        # avoid 0's in the matrix
+        n_instances=len(data)
+        partition_matrix = np.random.rand(n_instances, n_clusters)
+        partition_matrix = np.fmax(partition_matrix, np.finfo(np.float64).eps)        # avoid 0's in the matrix
+        typicality_matrix = np.random.rand(n_instances, n_clusters)
+        typicality_matrix = np.fmax(typicality_matrix, np.finfo(np.float64).eps)        # avoid 0's in the matrix
 
         # Pre-allocation
         jm = np.zeros(shape=(max_iter, 1))
-        g = np.zeros(shape=(c, data.shape[0]))
+        g = np.zeros(shape=(n_clusters, data.shape[0]))
 
 
         for i in range(max_iter):
            
             # Perform one iteration of PFCM
-            partition_matrix, typicality_matrix, centers, jm[i], g = pstepfcm(data, cntr, U, T, m, a, b, n, g)
+            partition_matrix, typicality_matrix, centers, jm[i], g = self._pstepfcm(data=data, U=partition_matrix, T=typicality_matrix, m=m, a=a, b=b, n=n_clusters, g=g)
             
             # Stopping criterion: Stop if objective value does inrease < error
             if abs(jm[i] - jm[i-1]) < error:
@@ -251,7 +287,7 @@ class Clusterer(object):
         return centers, partition_matrix, typicality_matrix, jm
 
 
-    def _pstepfcm(self, data, centers, U, T, g, m=2, n=2, a=0.5, b=0.5):
+    def _pstepfcm(self, data, U, T, g, m=2, n=2, a=0.5, b=0.5):
         #copy old u and t matrix and center locations
         um = U**m
         tf = T**n
@@ -273,4 +309,68 @@ class Clusterer(object):
         T = 1/(1+tmpt)
 
         return U, T, centers, jm, g
+
+    def gk(self, max_iter=100):
+        
+        # Initialize the partition matrix
+        u = np.random.dirichlet(np.ones(self.data.shape[0]), size=self.nr_clus)
+        
+        centers = []
+        iteration = 0
+        
+        while iteration < max_iter:
+            u_old = u.copy()   # keep old partition matrix to evaluate stopping criterium
+            
+            # Caluculate the locations of the cluster centers
+            centers = self._next_centers_gk(self.data, u)
+            
+            # Calculate the covariance matrix
+            f = self._covariance_gk(self.data, centers, u)
+            
+            # Calculate the distance between cluster centers and data points
+            dist = self._distance_gk(self.data, centers, f)
+            
+            # calculate objective
+            jm = (u * dist ** 2).sum()
+            
+            # Update the partition matrix
+            u = self._next_u_gk(dist)
+            iteration += 1
+
+            # Stopping criteria
+            if norm(u - u_old) < self.error:
+                iteration = max_iter
+        return centers, u, jm 
+
+    def _next_centers_gk(self, data, u):
+        um = u ** self.m
+        return ((um @ data).T / um.sum(axis=1)).T
+
+    def _covariance(self, data, v, u):
+        um = u ** self.m
+
+        denominator = um.sum(axis=1).reshape(-1, 1, 1)
+        temp = np.expand_dims(data.reshape(data.shape[0], 1, -1) - v.reshape(1, v.shape[0], -1), axis=3)
+        temp = np.matmul(temp, temp.transpose((0, 1, 3, 2)))
+        numerator = um.transpose().reshape(um.shape[1], um.shape[0], 1, 1) * temp
+        numerator = numerator.sum(0)
+
+        return numerator / denominator
+
+    def _distance(self, data, v, f):
+        dif = np.expand_dims(data.reshape(data.shape[0], 1, -1) - v.reshape(1, v.shape[0], -1), axis=3)
+        determ = np.power(np.linalg.det(f), 1 / self.m)
+        det_time_inv = determ.reshape(-1, 1, 1) * np.linalg.pinv(f)
+        temp = np.matmul(dif.transpose((0, 1, 3, 2)), det_time_inv)
+        output = np.matmul(temp, dif).squeeze().T
+        return np.fmax(output, 1e-8)
+
+    def _next_u(self, d):
+        power = float(1 / (self.m - 1))
+        d = d.transpose()
+        new_u = d.reshape((d.shape[0], 1, -1)).repeat(d.shape[-1], axis=1)
+        new_u = np.power(d[:, None, :] / new_u.transpose((0, 2, 1)), power)
+        new_u = 1 / new_u.sum(1)
+        new_u = new_u.transpose()
+        return new_u
 
