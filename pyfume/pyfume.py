@@ -36,7 +36,7 @@ class pyFUME(object):
 
     def calculate_error(self, method="RMSE"):
 
-        if method=="RMSE"
+        if method=="RMSE":
             return self._get_RMSE()
         elif method=="MAE":
             return self._get_MAE()
