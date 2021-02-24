@@ -12,7 +12,7 @@ import numpy as np
 
 
 class BuildTSFIS(object):
-    def __init__(self, datapath, nr_clus, variable_names=None, merge_threshold=1.0, **kwargs):
+    def __init__(self, datapath=None, dataframe=None, nr_clus=0, variable_names=None, process_categorical=False, merge_threshold=1.0, **kwargs):
         self.datapath = datapath
         self.nr_clus = nr_clus
         self.variable_names = variable_names
@@ -26,7 +26,7 @@ class BuildTSFIS(object):
             if 'sampling_number_of_bins' not in kwargs.keys(): kwargs['sampling_number_of_bins'] = 5
             if 'sampling_histogram' not in kwargs.keys(): kwargs['sampling_histogram'] = False            
         if 'data_delimiter' not in kwargs.keys(): kwargs['data_delimiter'] = ','
-        #if 'data_split_method' not in kwargs.keys(): kwargs['data_split_method'] = 'hold-out'
+        if 'data_split_method' not in kwargs.keys(): kwargs['data_split_method'] = 'hold-out'
         if 'feature_selection' not in kwargs.keys(): kwargs['feature_selection'] = None
         if 'fs_max_iter' not in kwargs.keys(): kwargs['fs_max_iter'] = 100
         if 'cluster_method' not in kwargs.keys(): kwargs['cluster_method'] = 'fcm'
@@ -48,7 +48,10 @@ class BuildTSFIS(object):
           
         
         # Load the data
-        dl=DataLoader(self.datapath,normalize=kwargs['normalize'], delimiter=kwargs['data_delimiter'])
+        if self.datapath is None:
+            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'])
+        else:
+            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'])
         self.variable_names=dl.variable_names        
 
         # Create a DataSplitter object
@@ -62,7 +65,7 @@ class BuildTSFIS(object):
         #######
         
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
-            print('Hold-out method selected.')
+            print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).

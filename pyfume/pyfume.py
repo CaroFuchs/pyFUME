@@ -13,7 +13,14 @@ from .FireStrengthCalculator import FireStrengthCalculator
 import numpy as np
 
 class pyFUME(object):
-    def __init__(self, datapath, nr_clus, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., **kwargs):
+    def __init__(self, datapath=None, dataframe=None, nr_clus=0, process_categorical=False, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., **kwargs):
+
+        if datapath is None and dataframe is None:
+            raise Exception("Please specify a valid dataset.")
+
+        if nr_clus<2:
+            raise Exception("Number of clusters should be greater than 1.")
+
         self.datapath=datapath
         self.nr_clus=nr_clus
         self.method=method
@@ -21,7 +28,10 @@ class pyFUME(object):
         #self.variable_names=variable_names
 
         if method=='Takagi-Sugeno' or method=='Sugeno':
-            self.FIS = BuildTSFIS(self.datapath, self.nr_clus, variable_names, merge_threshold=merge_threshold, **kwargs)
+            if datapath is not None:
+                self.FIS = BuildTSFIS(datapath=self.datapath, nr_clus=self.nr_clus, variable_names=variable_names, process_categorical=process_categorical, merge_threshold=merge_threshold, **kwargs)
+            else:
+                self.FIS = BuildTSFIS(dataframe=dataframe, nr_clus=self.nr_clus, variable_names=variable_names, process_categorical=process_categorical, merge_threshold=merge_threshold, **kwargs)
             if merge_threshold < 1.0:
                 self.dropped_fuzzy_sets = self.FIS._antecedent_estimator.get_number_of_dropped_fuzzy_sets()
         else:
