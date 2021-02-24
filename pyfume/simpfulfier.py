@@ -51,12 +51,13 @@ class SimpfulConverter(object):
 
     def generate_object(self):
         code = self.generate_code()
-        
-        import os
-        import contextlib
-
-        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+        if self.verbose == True:
             exec(code, globals()) 
+        elif self.verbose == False:
+            import os
+            import contextlib
+            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+                exec(code, globals()) 
         
         from copy import deepcopy
         self._fuzzyreasoner = deepcopy(FS)
