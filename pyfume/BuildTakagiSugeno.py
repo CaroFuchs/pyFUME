@@ -68,10 +68,14 @@ class BuildTSFIS(object):
             # and test set (default: 25%).
             self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dl.dataX, dl.dataY)
             
+            # Check if there are any missing variables and impute them
             if np.isnan(dl.dataX).any()== True:
-                print('Warning: Your data contains missing values that will be imputed using KNN.')
-                from sklearn.impute import KNNImputer
-    
+                try:
+                    from sklearn.impute import KNNImputer
+                except ImportError:
+                    raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
+
+                print('Warning: Your data contains missing values that will be imputed using KNN.')   
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)
                 self.x_test=imputer.fit_transform(self.x_test)
@@ -186,9 +190,12 @@ class BuildTSFIS(object):
                 self.y_test = np.array([dl.dataY[i] for i in tst_idx]) 
                 
                 if np.isnan(dl.dataX).any()== True:
-                    print('Warning: Your data contains missing values that will be imputed using KNN.')
-                    from sklearn.impute import KNNImputer
-    
+                    try:
+                        from sklearn.impute import KNNImputer
+                    except ImportError:
+                        raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
+
+                    print('Warning: Your data contains missing values that will be imputed using KNN.')   
                     imputer = KNNImputer(n_neighbors=3, weights="uniform")
                     self.x_train=imputer.fit_transform(self.x_train)
                     self.x_test=imputer.fit_transform(self.x_test)
@@ -274,8 +281,12 @@ class BuildTSFIS(object):
             self.y_train = dl.dataY.copy()
             
             if np.isnan(dl.dataX).any()== True:
+                try:
+                    from sklearn.impute import KNNImputer
+                except ImportError:
+                    raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
+
                 print('Warning: Your data contains missing values that will be imputed using KNN.')
-                from sklearn.impute import KNNImputer
     
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)

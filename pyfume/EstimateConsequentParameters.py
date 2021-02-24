@@ -2,7 +2,6 @@ import numpy as np
 from scipy.optimize import curve_fit
 from sklearn.linear_model import LinearRegression
 import numpy.matlib
-import statsmodels.api as sm
 
 class ConsequentEstimator(object):
     """
