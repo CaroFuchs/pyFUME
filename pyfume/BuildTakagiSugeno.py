@@ -151,6 +151,8 @@ class BuildTSFIS(object):
             
             #Create lists with test indices for each fold.
             self.fold_indices = ds.kfold(data_length=len(dl.dataX), number_of_folds=kwargs['number_of_folds'])
+            
+            # import indices from external file
             # import pickle
             # import pandas as pd
 
