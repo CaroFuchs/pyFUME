@@ -26,7 +26,7 @@ class BuildTSFIS(object):
             if 'sampling_number_of_bins' not in kwargs.keys(): kwargs['sampling_number_of_bins'] = 5
             if 'sampling_histogram' not in kwargs.keys(): kwargs['sampling_histogram'] = False            
         if 'data_delimiter' not in kwargs.keys(): kwargs['data_delimiter'] = ','
-        #if 'data_split_method' not in kwargs.keys(): kwargs['data_split_method'] = 'hold-out'
+        if 'data_split_method' not in kwargs.keys(): kwargs['data_split_method'] = 'hold-out'
         if 'feature_selection' not in kwargs.keys(): kwargs['feature_selection'] = None
         if 'fs_max_iter' not in kwargs.keys(): kwargs['fs_max_iter'] = 100
         if 'cluster_method' not in kwargs.keys(): kwargs['cluster_method'] = 'fcm'
@@ -107,7 +107,7 @@ class BuildTSFIS(object):
             cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
             
             if kwargs['cluster_method'] == 'fcm':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
                     fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
             elif kwargs['cluster_method'] == 'gk':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='gk')

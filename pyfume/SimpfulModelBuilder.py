@@ -20,8 +20,7 @@ class SugenoFISBuilder(object):
     """
     def __init__(self, antecedent_sets, consequent_parameters, 
         variable_names, model_order = 'first', extreme_values=None, operators=None, 
-        save_simpful_code=True, fuzzy_sets_to_drop=None):
-        
+        save_simpful_code=True, fuzzy_sets_to_drop=None, verbose=True):
         #super(SugenoFISBuilder, self).__init__()
         super().__init__()
 
@@ -32,8 +31,8 @@ class SugenoFISBuilder(object):
             operators = operators,
             extreme_values = extreme_values,
             model_order = model_order,
-            fuzzy_sets_to_drop=fuzzy_sets_to_drop
-            )
+            fuzzy_sets_to_drop=fuzzy_sets_to_drop,
+            verbose = verbose)
         
         if save_simpful_code==True:
             self._SC.save_code("Simpful_code.py")

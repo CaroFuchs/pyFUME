@@ -10,7 +10,6 @@ class FireStrengthCalculator(object):
         self.what_to_drop = fuzzy_sets_to_drop
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         
-        
         # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
         simpbuilder = SugenoFISBuilder(
             self.antecedent_parameters, 
@@ -19,7 +18,8 @@ class FireStrengthCalculator(object):
             extreme_values = None,
             operators=kwargs["operators"], 
             save_simpful_code=False, 
-            fuzzy_sets_to_drop=self.what_to_drop)
+            fuzzy_sets_to_drop=self.what_to_drop,
+            verbose = False)
 
         self.dummymodel = simpbuilder.simpfulmodel
         

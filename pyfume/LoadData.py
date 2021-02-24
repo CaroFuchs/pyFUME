@@ -28,7 +28,7 @@ class DataLoader(object):
             
         self.dataX=self.data[:,0:-1]
         self.dataY=self.data[:,-1]
-        
+
         if normalize=='minmax' or normalize=='linear' or normalize==True:
             self.dataX = (self.dataX - np.abs(self.dataX).min(axis=0)) / (np.abs(self.dataX).max(axis=0)-np.abs(self.dataX).min(axis=0))
 
