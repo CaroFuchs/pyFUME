@@ -16,9 +16,12 @@ class DataLoader(object):
                 (default = None). 
             normalize: If switch on, the data will be normalized. The user can 
                 choose between 'minmax' or 'zscore' normalization (default = False). 
+            delimiter: Specify the symbol used to separate data in the dataset (default = ',').
+            verbose: Enable verbose mode (default = True).
     """
     
-    def __init__(self, datapath=None, dataframe=None, process_categorical=False, variable_names=None, normalize=False, delimiter=','):
+    def __init__(self, datapath=None, dataframe=None, process_categorical=False, 
+        variable_names=None, normalize=False, delimiter=',', verbose=True):
 
         # user specified a dataframe?
         if dataframe is not None:
@@ -30,16 +33,32 @@ class DataLoader(object):
 
             # valid dataframe specified: proceed with creating pyFUME's data structures
 
+            new_data_frame = deepcopy(dataframe)
+            
             if process_categorical:
-                print(" * Processing categorical data: ENABLED.")
-                list_categorical = self._check_non_categorical(dataframe)    
-                new_data_frame = deepcopy(dataframe)
+                if verbose: print(" * Processing categorical data.")
                 new_data_frame = pd.get_dummies(new_data_frame) 
-                new_data_frame.to_csv("bla.csv")
-                self.data = new_data_frame.to_numpy()
-                self.variable_names = new_data_frame.columns
 
-            print(" * Dataframe imported in pyFUME.")
+            else:
+                list_categorical = self._check_categorical(dataframe)    
+                if verbose: 
+                    print(" * Dropping categorical data.")
+                    print("   Detected categorical variables:", list_categorical)
+                
+                for cat in list_categorical:
+                    new_data_frame = new_data_frame.drop(cat, axis=1)
+            
+            # DEBUG
+            new_data_frame.to_csv("__new_dataset.csv", index=False)
+            
+            # Convert to matrix for pyFUME processing and 
+            # store the names of the columns as variable names.
+            self.data = new_data_frame.to_numpy()           
+            self.variable_names = list(new_data_frame.columns)
+            
+            if verbose:
+                print(" * Variable names:", self.variable_names)
+                print(" * Dataframe %dx%d imported in pyFUME." % self.data.shape)
             
 
         # pyFUME's conventional behavior
@@ -65,25 +84,16 @@ class DataLoader(object):
             self.dataX = (self.dataX - self.dataX.mean(axis=0)) / self.dataX.std(axis=0)
             
 
-    def _check_non_categorical(self, DF):
+    def _check_categorical(self, DF):
         cols = DF.columns[:-1] # last one is ALWAYS the output variable
         num_cols = DF._get_numeric_data().columns
         categ_cols = list( set(cols)-set(num_cols))
-        print(" * Detected categorical variables:", categ_cols)
         return categ_cols
 
 
-    def _replace_column(self, DF, column, dummy):
-        print (dummy)
-        exit()
-        DF = DF.drop(column, axis=1)
-        DF = DF.join(dummy)
-        print(DF)
-        exit()
 
 if __name__ == "__main__":
 
     import pandas as pd
     DF = pd.read_csv("examples\\serious-injury-outcome-indicators-2000-19.csv")
-    #print (DF)
-    DL = DataLoader(dataframe=DF, process_categorical=True)
+    DL = DataLoader(dataframe=DF, process_categorical=False)

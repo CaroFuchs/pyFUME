@@ -12,7 +12,9 @@ import numpy as np
 
 
 class BuildTSFIS(object):
-    def __init__(self, datapath=None, dataframe=None, nr_clus=0, variable_names=None, process_categorical=False, merge_threshold=1.0, **kwargs):
+    def __init__(self, datapath=None, dataframe=None, nr_clus=0, variable_names=None, 
+            process_categorical=False, merge_threshold=1.0, **kwargs):
+
         self.datapath = datapath
         self.nr_clus = nr_clus
         self.variable_names = variable_names
@@ -126,7 +128,7 @@ class BuildTSFIS(object):
             self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
-            # Calculate the firing strnegths
+            # Calculate the firing strengths
             fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names, **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
   
@@ -362,5 +364,5 @@ class BuildTSFIS(object):
             self.model = simpbuilder.simpfulmodel
             
         else:
-            print('Invalid data splitting method chosen. Training will be aborted.')
-                               
+            print('ERROR: invalid data splitting method chosen. Training will be aborted.')
+            exit()
