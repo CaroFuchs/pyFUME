@@ -229,7 +229,7 @@ class BuildTSFIS(object):
                 cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
                 
                 if kwargs['cluster_method'] == 'fcm':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
+                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
                         fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
                 elif kwargs['cluster_method'] == 'fst-pso':
                     self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
@@ -321,7 +321,7 @@ class BuildTSFIS(object):
             cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
             
             if kwargs['cluster_method'] == 'fcm':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
                     fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
             elif kwargs['cluster_method'] == 'gk':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='gk')
