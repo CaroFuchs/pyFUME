@@ -51,9 +51,9 @@ class BuildTSFIS(object):
         
         # Load the data
         if self.datapath is None:
-            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'])
+            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=kwargs['verbose'])
         else:
-            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'])
+            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=kwargs['verbose'])
         self.variable_names=dl.variable_names        
 
         # Create a DataSplitter object
@@ -67,7 +67,7 @@ class BuildTSFIS(object):
         #######
         
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
-            print(' * Hold-out method selected.')
+            if kwargs['verbose']: print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
