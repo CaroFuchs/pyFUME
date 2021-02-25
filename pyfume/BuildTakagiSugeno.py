@@ -19,6 +19,9 @@ class BuildTSFIS(object):
         self.nr_clus = nr_clus
         self.variable_names = variable_names
         self._antecedent_estimator = None
+        verbose = False
+
+        if 'verbose' in kwargs.keys(): verbose = kwargs['verbose']
         
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
@@ -51,9 +54,9 @@ class BuildTSFIS(object):
         
         # Load the data
         if self.datapath is None:
-            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=kwargs['verbose'])
+            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         else:
-            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=kwargs['verbose'])
+            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         self.variable_names=dl.variable_names        
 
         # Create a DataSplitter object
@@ -67,7 +70,7 @@ class BuildTSFIS(object):
         #######
         
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
-            if kwargs['verbose']: print(' * Hold-out method selected.')
+            if verbose: print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
@@ -129,7 +132,7 @@ class BuildTSFIS(object):
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
             # Calculate the firing strengths
-            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names, **kwargs)
+            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names,  **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
   
             # Estimate the parameters of the consequent
