@@ -3,7 +3,9 @@ from .SimpfulModelBuilder import SugenoFISBuilder
 import numpy as np
 
 class FireStrengthCalculator(object):
-    def __init__(self, antecedent_parameters, nr_clus, variable_names, verbose=False, fuzzy_sets_to_drop=None, **kwargs):
+    def __init__(self, antecedent_parameters, nr_clus, variable_names, 
+            verbose=False, fuzzy_sets_to_drop=None, **kwargs):
+
         self.antecedent_parameters = antecedent_parameters
         self.nr_clus = nr_clus
         self.variable_names = variable_names

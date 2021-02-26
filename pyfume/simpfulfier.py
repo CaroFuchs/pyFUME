@@ -6,14 +6,14 @@ class SimpfulConverter(object):
     """
     
     def __init__(self, 
-        input_variables_names,
-        consequents_matrix,
-        fuzzy_sets,
-        model_order = 'first',
-        fuzzy_sets_to_drop = None,
-        extreme_values = None,
-        operators = None,
-        verbose = False):
+            input_variables_names,
+            consequents_matrix,
+            fuzzy_sets,
+            model_order = 'first',
+            fuzzy_sets_to_drop = None,
+            extreme_values = None,
+            operators = None,
+            verbose = False):
         super().__init__()
         self._input_variables = input_variables_names
         self._consequents_matrix = consequents_matrix
@@ -50,7 +50,7 @@ class SimpfulConverter(object):
 
     def generate_object(self):
         code = self.generate_code()
-        if self.verbose == True:
+        if self.verbose:
             exec(code, globals()) 
         elif self.verbose == False:
             import os
@@ -94,8 +94,10 @@ class SimpfulConverter(object):
 
 
     def _create_fuzzy_sets(self):
+        
         j=0
         chunk = ""
+        
         for num_var, var in enumerate(self._input_variables):
 
             subchunk = []
@@ -104,7 +106,7 @@ class SimpfulConverter(object):
                 if (num_var, cluster) in self._fuzzy_sets_to_drop:
                     chunk+="# "
 
-                if self.verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
+                #if self.verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
                 
                 chunk += 'FS_%d = FuzzySet(' % (j+1)
                 term = 'cluster%d' % (cluster+1)

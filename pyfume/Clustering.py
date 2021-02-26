@@ -19,11 +19,12 @@ class Clusterer(object):
             nr_clus: Number of clusters that should be identified in the data.  
     """ 
     
-    def __init__(self, x_train, y_train, nr_clus):
+    def __init__(self, x_train, y_train, nr_clus, verbose=False):
         self.x_train=x_train
         self.y_train=y_train
         self.data=np.concatenate((self.x_train,self.y_train.reshape(len(self.y_train),1)),axis=1)
         self.nr_clus = nr_clus
+        self._verbose = verbose
         
 
     def cluster(self, method="fcm", **kwargs):
@@ -41,7 +42,10 @@ class Clusterer(object):
                     each data point to each of the clusters.
                 jm: Fitness function of the best solution.
         """ 
-    
+
+        if self._verbose:
+            print(" * Clustering method:", method)
+
         try:
             m = kwargs["m"]
         except:
@@ -62,7 +66,7 @@ class Clusterer(object):
 #                seed = None
             centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=m, max_iter=max_iter, error=error)
         
-        elif method== 'gk' or method == 'GK' or method == 'Gustafson-Kessel' or method == 'gustafson-kessel' or method == 'g-k':
+        elif method == 'gk' or method == 'GK' or method == 'Gustafson-Kessel' or method == 'gustafson-kessel' or method == 'g-k':
             try:
                 max_iter = kwargs["gk_max_iter"]
             except:
@@ -74,7 +78,7 @@ class Clusterer(object):
             centers, partition_matrix, jm =self._gk(max_iter=max_iter) 
             print(partition_matrix)               
 
-        elif method== "pfcm":
+        elif method == "pfcm":
             try:
                 n = kwargs["pfcm_n"]
             except:

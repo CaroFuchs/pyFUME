@@ -70,6 +70,7 @@ class BuildTSFIS(object):
         #######
         
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
+           
             if verbose: print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
@@ -95,7 +96,7 @@ class BuildTSFIS(object):
             # Perform feature selection if requested
             if kwargs['feature_selection'] != None:
                 if 'feature_selection_performance_metric' not in kwargs.keys(): kwargs['feature_selection_performance_metric'] = 'MAE'
-                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'])
+                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'])
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()
@@ -112,7 +113,7 @@ class BuildTSFIS(object):
                 self.selected_variable_names= self.variable_names
                 
             # Cluster the training data (in input-output space) using FCM
-            cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
+            cl = Clusterer(self.x_train, self.y_train, self.nr_clus, verbose=verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
@@ -153,7 +154,7 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 
                 save_simpful_code=kwargs['save_simpful_code'], 
-                fuzzy_sets_to_drop=what_to_drop)
+                fuzzy_sets_to_drop=what_to_drop, verbose=verbose)
     
             self.model = simpbuilder.simpfulmodel
             
