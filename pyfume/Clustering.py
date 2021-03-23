@@ -31,15 +31,14 @@ class Clusterer(object):
         Clusters the data using the clustering method as specified by the user.
             
         Args:
-                method: The method used for the clustering. The user can choose 
-                'fcm' (fuzzy c-means), 'fst-pso' (fst-pso based clustering) and 'gk' (Gustafson-Kessel).
+                method: The method used for the clustering. The user can choose 'fcm' (fuzzy c-means), 'fst-pso' (fst-pso based clustering) and 'gk' (Gustafson-Kessel).
                 **kwargs: Additional arguments to change settings of the clustering method.     
                 
-        Returns:    
-                centers: The location of the identified cluster centers.
-                partition_matrix: A matrix containing the cluster memberships of 
-                    each data point to each of the clusters.
-                jm: Fitness function of the best solution.
+        Returns: 
+                Tuple containing (centers, partion_matrix, jm)   
+                    - centers: The location of the identified cluster centers.
+                    -  partition_matrix: A matrix containing the cluster memberships of each data point to each of the clusters.
+                    - jm: Fitness function of the best solution.
         """ 
     
         try:
@@ -310,7 +309,7 @@ class Clusterer(object):
 
         return U, T, centers, jm, g
 
-    def gk(self, max_iter=100):
+    def _gk(self, max_iter=100):
         
         # Initialize the partition matrix
         u = np.random.dirichlet(np.ones(self.data.shape[0]), size=self.nr_clus)

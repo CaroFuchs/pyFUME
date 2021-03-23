@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Feature Selector &mdash; pyFUME 0.1.13 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Model tester" href="tester.html" />
+    <link rel="prev" title="Fire Strength Calculator" href="FSC.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> pyFUME
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Model Creation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pyf.html">pyFUME model builder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BTS.html">Takagi-Sugeno Model Builder</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Data Handling:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DL.html">Data Loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Sampl.html">Data Sampler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DS.html">Data Splitter</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Parameter Estimation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Clustering.html">Clustering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AE.html">Antecedent Set Estimator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CP.html">Consequent Parameter Estimator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FSC.html">Fire Strength Calculator</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Feature Selector</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Model Evaluation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tester.html">Model tester</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyFUME</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Feature Selector</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/FS.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-pyfume.FeatureSelection">
+<span id="feature-selector"></span><h1>Feature Selector<a class="headerlink" href="#module-pyfume.FeatureSelection" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="pyfume.FeatureSelection.FeatureSelector">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">pyfume.FeatureSelection.</span></code><code class="sig-name descname"><span class="pre">FeatureSelector</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nr_clus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'first'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">performance_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MAE'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyfume.FeatureSelection.FeatureSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Creates a new feature selection object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataX</strong> – The input data.</p></li>
+<li><p><strong>dataY</strong> – The output data (true label/golden standard).</p></li>
+<li><p><strong>nr_clus</strong> – Number of clusters that should be identified in the data.</p></li>
+<li><p><strong>variable_names</strong> – Names of the variables</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments to change settings of the fuzzy model.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="pyfume.FeatureSelection.FeatureSelector.fst_pso_feature_selection">
+<code class="sig-name descname"><span class="pre">fst_pso_feature_selection</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_clusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_clusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">performance_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MAE'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyfume.FeatureSelection.FeatureSelector.fst_pso_feature_selection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform feature selection using the FST-PSO [1] variant of the Integer and Categorical
+PSO (ICPSO) proposed by Strasser and colleagues [2]. ICPSO hybridizes PSO and Estimation of Distribution
+Algorithm (EDA), which makes it possible to convert a discrete problem to the (real-valued)
+problem of estimating the distribution vector of a probabilistic model. Each fitness
+evaluation a random solution is generated according to the probability distribution
+encoded by the particle. Because the implementation is a variant on FST-PSO, the optimal
+settings for the PSO are set automatically.</p>
+<p>If the number of clusters is set to None, this method simultaneously choses the optimal
+number of clusters.</p>
+<p>[1] Nobile, M. S., Cazzaniga, P., Besozzi, D., Colombo, R., Mauri, G., &amp; Pasi, G. (2018).
+Fuzzy Self-Tuning PSO: A settings-free algorithm for global optimization. Swarm and
+evolutionary computation, 39, 70-85.</p>
+<p>[2] Strasser, S., Goodman, R., Sheppard, J., &amp; Butcher, S. (2016). A new discrete
+particle swarm optimization algorithm. In Proceedings of the Genetic and Evolutionary
+Computation Conference 2016 (pp. 53-60).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_iter</strong> – The maximum number of iterations used in the PSO (default = 10).</p></li>
+<li><p><strong>min_clusters</strong> – The minimum number of clusters to be identified in the data set (only</p></li>
+<li><p><strong>nr_clusters = None</strong><strong>)</strong> (<em>when</em>) – </p></li>
+<li><p><strong>max_clusters</strong> – The maximum number of clusters to be identified in the data set (only</p></li>
+<li><p><strong>nr_clusters = None</strong><strong>)</strong> – </p></li>
+<li><p><strong>performance_metric</strong> – The performance metric on which each solution is evaluated (default</p></li>
+<li><p><strong>Absolute Error</strong> (<em>Mean</em>) – </p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments to change settings of the fuzzy model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple containing (selected_features, selected_feature_names, optimal_number_clusters)</dt><dd><ul class="simple">
+<li><p>selected_features: The indices of the selected features.</p></li>
+<li><p>selected_feature_names: The names of the selected features.</p></li>
+<li><p>optimal_number_clusters: If initially nr_clusters = None, this argument encodes the optimal number of clusters in the data set. If nr_clusters is not None, the optimal_number_clusters is set to nr_clusters.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyfume.FeatureSelection.FeatureSelector.wrapper">
+<code class="sig-name descname"><span class="pre">wrapper</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyfume.FeatureSelection.FeatureSelector.wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs feature selection using the wrapper method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Additional arguments to change settings of the fuzzy model.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple containing (selected_features, selected_feature_names)</dt><dd><ul class="simple">
+<li><p>selected_features: The indices of the selected features.</p></li>
+<li><p>selected_feature_names: The names of the selected features.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tester.html" class="btn btn-neutral float-right" title="Model tester" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="FSC.html" class="btn btn-neutral float-left" title="Fire Strength Calculator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, C.E.M. Fuchs
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

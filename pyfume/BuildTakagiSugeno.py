@@ -12,7 +12,23 @@ import numpy as np
 
 
 class BuildTSFIS(object):
-    def __init__(self, datapath=None, dataframe=None, nr_clus=0, variable_names=None, 
+    """
+        Learns a a new  Takagi-Sugeno fuzzy model.
+        
+        Args:
+            datapath: The path to the csv file containing the input data (argument 'datapath' or 'dataframe' should be specified by the user).
+            dataframe: Pandas dataframe containing the input data (argument 'datapath' or 'dataframe' should be specified by the user).
+            nr_clus: Number of clusters that should be identified in the data (default = 2).
+            process_categorical: Boolean to indicate whether categorical variables should be processed (default = False).
+            method: At this moment, only Takagi Sugeno models are supported (default = 'Takagi-Sugeno')
+            variable_names: Names of the variables, if not specified the names will be read from the first row of the csv file (default = None).
+            merge_threshold: Threshold for GRABS to drop fuzzy sets from the model. If the jaccard similarity between two sets is higher than this threshold, the fuzzy set will be dropped from the model.
+            **kwargs: Additional arguments to change settings of the fuzzy model.
+
+        Returns:
+            An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
+    """
+    def __init__(self, datapath=None, dataframe=None, nr_clus=2, variable_names=None, 
             process_categorical=False, merge_threshold=1.0, **kwargs):
 
         self.datapath = datapath
@@ -72,7 +88,6 @@ class BuildTSFIS(object):
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
             self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dl.dataX, dl.dataY)
-            
             # Check if there are any missing variables and impute them
             if np.isnan(dl.dataX).any()== True:
                 try:
@@ -84,6 +99,7 @@ class BuildTSFIS(object):
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)
                 self.x_test=imputer.fit_transform(self.x_test)
+
             
             if kwargs['oversampling'] == True:
                 sample = Sampler(train_x = self.x_train, train_y=self.y_train, number_of_bins =  kwargs['sampling_number_of_bins'], histogram =  kwargs['sampling_histogram'])

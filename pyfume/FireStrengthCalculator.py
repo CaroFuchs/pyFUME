@@ -3,6 +3,17 @@ from .SimpfulModelBuilder import SugenoFISBuilder
 import numpy as np
 
 class FireStrengthCalculator(object):
+    """
+        Creates a new fire strength calculator object.
+        
+        Args:
+            antecedent_parameters: The parameters of the antecedent sets of the fuzzy model as given as output 
+            by pyFUME's AntecedentEstimator clas (format: shape of the mf, parameters).
+            nr_clus: Number of clusters in the data.
+            variable_names: Names of the variables.
+            fuzzy_sets_to_drop = Fuzzy sets identified by GRsABS to be dropped from the model (default = None).
+            **kwargs: Additional arguments to change settings of the fuzzy model.
+    """
     def __init__(self, antecedent_parameters, nr_clus, variable_names, fuzzy_sets_to_drop=None, **kwargs):
         self.antecedent_parameters = antecedent_parameters
         self.nr_clus = nr_clus
@@ -24,6 +35,16 @@ class FireStrengthCalculator(object):
         self.dummymodel = simpbuilder.simpfulmodel
         
     def calculate_fire_strength(self, data):
+        """
+            Calculates the firing strength per rule of the fuzzy model given a data set.
+            
+            Args:
+                data: The data of which the firing strengths per rule should be calculated.
+                
+            Returns:
+                The firing strengths per rule per data point (rows: data point index, column: rule/cluster number).
+        """
+
         self.data=data
         # Calculate the firing strengths for each rule for each data point 
         firing_strengths=[]

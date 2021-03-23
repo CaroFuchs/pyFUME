@@ -3,6 +3,17 @@ import simpful
 class SimpfulConverter(object):
     """    This object converts a description of a Fuzzy System into a readable
         Simpful project file.
+
+        Args:
+            input_variables_names: The names of the input variables of the fuzzy model.
+            consequents_matrix: The parameters of the consequent function.
+            fuzzy_sets: list containing a sub-list for each fuzzy set in the model. The sub-list should contain the shape of the fuzzy set (e.g. 'gauss') and the parameters of the function (e.g. mu, sigma). For example: ('gauss', 5, 1).
+            model_order: The order of the fuzzy model ('zero' or 'first') (default = 'first').
+            fuzzy_sets_to_drop: Fuzzy sets that should be disabled in the Simpful code, for example when flagged by GRABS for simplification (default = None).
+            extreme_values: The values that should be used for the universe of discourse for the vaiables in the fuzzy model (default = None).
+            operators: A list of strings, specifying fuzzy operators to be used instead of defaults (default = None). For more information see Simpful's documentation.
+            verbose: Boolean (True/False) that indicates whether extra information will be printed in the user's console (default = True).
+
     """
     
     def __init__(self, 
@@ -43,6 +54,12 @@ class SimpfulConverter(object):
 
         
     def save_code(self, path):
+        """
+            Saves the Simpful code.
+            
+            Args:
+                path: Path to the folder where the Simpful code should be saved.
+        """
         code = self.generate_code()
         with open(path, "w") as fo:
             fo.write(code)
@@ -50,6 +67,9 @@ class SimpfulConverter(object):
             print (" * Code saved to file %s" % path)
 
     def generate_object(self):
+        """
+            Generates the executable object containing the fuzzy model.
+        """
         code = self.generate_code()
         if self.verbose == True:
             exec(code, globals()) 
@@ -62,8 +82,10 @@ class SimpfulConverter(object):
         from copy import deepcopy
         self._fuzzyreasoner = deepcopy(FS)
 
-    def generate_code(self, use_main=False):
-
+    def generate_code(self):
+        """
+            Generates the Simpful code.
+        """
         # rules
         rule_texts = self.create_rules()
         for i in range(1, self._clusters+1):

@@ -66,7 +66,8 @@ class DataLoader(object):
 
             if variable_names is None:
                 variable_names = np.genfromtxt(datapath, dtype='str', delimiter=delimiter, max_rows=1)
-                print('The following variable names were detected from the input file: ', variable_names)
+                if verbose ==True:
+                    print('The following variable names were detected from the input file: ', variable_names)
                 self.output_name=variable_names[-1]
                 self.variable_names=variable_names[:-1]
                 self.data=np.genfromtxt(datapath, delimiter=delimiter, skip_header=1, filling_values=np.nan)

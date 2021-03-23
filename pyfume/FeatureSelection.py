@@ -34,8 +34,10 @@ class FeatureSelector(object):
                 **kwargs: Additional arguments to change settings of the fuzzy model.
                 
             Returns:
-                selected_features: The indices of the selected features.
-                selected_feature_names: The names of the selected features.            
+                Tuple containing (selected_features, selected_feature_names)
+                    - selected_features: The indices of the selected features.
+                    - selected_feature_names: The names of the selected features. 
+
         """
             
         # Create a training and valiadation set for the feature selection phase
@@ -83,17 +85,43 @@ class FeatureSelector(object):
         
         return selected_features, selected_feature_names
 
-    def fst_pso_feature_selection(self,max_iter=100, min_clusters=2,max_clusters=5, performance_metric='MAE', **kwargs):
+    def fst_pso_feature_selection(self,max_iter=100, min_clusters=2, max_clusters=10, performance_metric='MAE', **kwargs):
         """
-            Performs feature selection using the wrapper method.
+            Perform feature selection using the FST-PSO [1] variant of the Integer and Categorical 
+            PSO (ICPSO) proposed by Strasser and colleagues [2]. ICPSO hybridizes PSO and Estimation of Distribution 
+            Algorithm (EDA), which makes it possible to convert a discrete problem to the (real-valued) 
+            problem of estimating the distribution vector of a probabilistic model. Each fitness 
+            evaluation a random solution is generated according to the probability distribution 
+            encoded by the particle. Because the implementation is a variant on FST-PSO, the optimal 
+            settings for the PSO are set automatically.
+
+            If the number of clusters is set to None, this method simultaneously choses the optimal 
+            number of clusters.
+
+            [1] Nobile, M. S., Cazzaniga, P., Besozzi, D., Colombo, R., Mauri, G., & Pasi, G. (2018). 
+            Fuzzy Self-Tuning PSO: A settings-free algorithm for global optimization. Swarm and 
+            evolutionary computation, 39, 70-85.
+            
+            [2] Strasser, S., Goodman, R., Sheppard, J., & Butcher, S. (2016). A new discrete 
+            particle swarm optimization algorithm. In Proceedings of the Genetic and Evolutionary 
+            Computation Conference 2016 (pp. 53-60). 
             
             Args:
                 max_iter: The maximum number of iterations used in the PSO (default = 10).
+                min_clusters: The minimum number of clusters to be identified in the data set (only 
+                when nr_clusters = None)
+                max_clusters: The maximum number of clusters to be identified in the data set (only 
+                when nr_clusters = None)
+                performance_metric: The performance metric on which each solution is evaluated (default
+                Mean Absolute Error (MAE))
                 **kwargs: Additional arguments to change settings of the fuzzy model.
                 
             Returns:
-                selected_features: The indices of the selected features.
-                varnams: The names of the selected features.
+                Tuple containing (selected_features, selected_feature_names, optimal_number_clusters)
+                    - selected_features: The indices of the selected features.
+                    - selected_feature_names: The names of the selected features.
+                    - optimal_number_clusters: If initially nr_clusters = None, this argument encodes the optimal number of clusters in the data set. If nr_clusters is not None, the optimal_number_clusters is set to nr_clusters.
+
         """
         
         from fstpso import FuzzyPSO
@@ -103,6 +131,7 @@ class FeatureSelector(object):
         
         # Create the search space for feature selection with number of dimensions D
         D = np.size(self.dataX,1)
+        
         s=list([[True, False]]*D)
         
         # Add dimension for cluster number selection
@@ -142,13 +171,14 @@ class FeatureSelector(object):
 #        return sum(particle)
     
     def _function(self, particle, arguments, **kwargs):
+        from itertools import compress 
         if self.nr_clus == None:
             A = arguments['x_train'][:,particle[:-1]]
-            varnams=self.variable_names[particle[:-1]]
+            varnams=list(compress(self.variable_names, particle[:-1]))
             nr_clus=particle[-1]
         else:
             A = arguments['x_train'][:,particle[:]]
-            varnams=self.variable_names[particle[:]]
+            varnams=list(compress(self.variable_names, particle[:]))
             nr_clus=self.nr_clus
         
         if A.shape[1]==0: ## If no features are selected, return a infinite high error

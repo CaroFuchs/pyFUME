@@ -20,6 +20,15 @@ class ConsequentEstimator(object):
         self.firing_strengths=firing_strengths
         
     def zero_order(self):
+        """
+            Estimates the consequent parameters of the zero-order Sugeno-Takagi model using normalized means.
+        
+            Args:
+                df: default value returned when the sum of grades equals to one (default = 0).
+        
+            Returns:
+                The parameters for the consequent function.
+        """
         p=np.zeros((self.firing_strengths.shape[1]))
         for clus in range(0,self.firing_strengths.shape[1]): 
             fs=self.firing_strengths[:,clus]
@@ -31,15 +40,14 @@ class ConsequentEstimator(object):
             
     def suglms(self, global_fit=False, df=0):
         """
-            Estimates the consequent parameters in the Sugeno-Takagi model
-            using least squares.
+            Estimates the consequent parameters in the first-order Sugeno-Takagi model using least squares.
         
             Args:
-                df: default value returned when the sum of grades equals to one 
-                (default = 0).
+                global_fit: Use the local (global_fit=False) or global (global_fit=True) least mean squares estimates. Global estimates functionality is still in beta mode, so use with caution.
+                df: default value returned when the sum of grades equals to one (default = 0).
         
-            Returns
-                p: The parameters for the consequent function.
+            Returns:
+                The parameters for the consequent function.
         """
         
         x=self.x_train.copy()

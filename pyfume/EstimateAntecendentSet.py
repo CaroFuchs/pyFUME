@@ -36,6 +36,8 @@ class AntecedentEstimator(object):
                 merge_threshold: Threshold for the merging of fuzzy sets for 
                     the GRABS approach. By default no merging takes place 
                     (default = 1.0).
+            Returns:
+                A list with the estimated parameters of the membership functions (format if gauss: mu, sigma; if gauss2: mu1, sigma1, mu2, sigma2)
         """         
         mf_list=[]
 

@@ -26,10 +26,11 @@ class DataSplitter(object):
                         (default = 0.75).
                     
                 Returns:
-                    x_train: Input variables of the training data.
-                    x_test: Input variables of the test data.
-                    y_train: Output variables (true label/golden standard) of the training data.
-                    y_test: Output variables (true label/golden standard) of the test data.
+                Tuple containing (x_train, x_test, y_train, y_test)
+                        - x_train: Input variables of the training data.
+                        - x_test: Input variables of the test data.
+                        - y_train: Output variables (true label/golden standard) of the training data.
+                        - y_test: Output variables (true label/golden standard) of the test data.
         """
         
         universe=set(range(0,np.shape(dataX)[0]))
@@ -55,7 +56,7 @@ class DataSplitter(object):
                     (default = 10)
     
             Returns:
-                fold_indices: A list with k (non-overlapping) sublists each containing  indices.
+                A list with k (non-overlapping) sublists each containing the indices for one fold.
         """
         
         idx=np.arange(0, data_length)

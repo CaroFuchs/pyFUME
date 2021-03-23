@@ -1,6 +1,16 @@
 import numpy as np
 
 class Sampler(object):  
+    """
+        Creates a new Sampler object that makes it possible to oversample unbalanced data sets to make them more balanced.
+        
+        Args:
+            train_x: The input data.
+            train_y: The output data (true label/golden standard) on basis which will be sampled.
+            number_of_bins: Number of clusters that should be identified in the data.
+            histogram: True/False flag that determines whether a histogram of the frequencies of the output data will be plotted of both the old and new (= sampled) situation (default = False). The package 'matplotlib.pyplot' is required for this functionality.
+    """ 
+
     def __init__(self,train_x, train_y, number_of_bins = 5, histogram = False):
         self.train_x = train_x
         self.train_y = train_y
@@ -8,6 +18,14 @@ class Sampler(object):
         self.histogram = histogram
         
     def oversample(self):
+        """
+        Created a more balanced data set by oversampling underrepresented data instances (based on values of the output variable) in the data set.
+
+        Returns:
+            Tuple containing (new_train_x, new_train_y)
+                - new_train_x: The  oversampled input data metrix.
+                - new_train_y: The oversampled output data matrix.
+        """           
         print('Your training data will be oversampled.')
         data = np.append(self.train_x, self.train_y.reshape(len(self.train_y),1), axis=1)
         hist, bins = np.histogram(self.train_y, bins=self.number_of_bins)

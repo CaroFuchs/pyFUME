@@ -32,8 +32,9 @@ class SugenoFISTester(object):
         Calculates the predictions labels of the test data using the fuzzy model.
 
         Returns:
-            Prediction labels
-            Error: the difference between the prediction label and the 'true' label
+            Tuple containing (result, error)
+                - result: Prediction labels.
+                - error: The difference between the prediction label and the 'true' label.
         """
         result = []
         for sample in self._data_to_test:
@@ -48,7 +49,18 @@ class SugenoFISTester(object):
             print('The true labels (golden standard) were not provided, so the error could not be calculated.')
         return result, error
     
-    def calculate_performance(self, metric='MAE'):        
+    def calculate_performance(self, metric='MAE'):  
+        """
+        Calculates the performance of the model given the test data.
+
+            Args:
+                metric: The performance metric to be used to evaluate the model. Choose from: Mean Absolute Error 
+                ('MAE'), Mean Squared Error ('MSE'),  Root Mean Squared Error ('RMSE'), Mean Absolute Percentage 
+                Error ('MAPE').
+        
+        Returns:
+            The performance as expressed by the chosen performance metric.
+        """      
         if metric == 'MAE':
             err=self.calculate_MAE()
         elif metric == 'MSE':
@@ -67,7 +79,7 @@ class SugenoFISTester(object):
         Calculates the Root Mean Squared Error of the model given the test data.
         
         Returns:
-            Root Mean Squared Error
+            The Root Mean Squared Error of the fuzzy model.
         """
         _, error=self.predict()
         return sqrt(np.mean(np.square(error)))
@@ -78,7 +90,7 @@ class SugenoFISTester(object):
         Calculates the Mean Squared Error of the model given the test data.
         
         Returns:
-            Mean Squared Error
+            The Mean Squared Error of the fuzzy model.
         """
         _, error=self.predict()
         return np.mean(np.square(error))   
@@ -88,7 +100,7 @@ class SugenoFISTester(object):
         Calculates the Mean Absolute Error of the model given the test data.
         
         Returns:
-            Mean Absolute Error
+            The Mean Absolute Error of the fuzzy model.
         """
         _, error=self.predict()
         return np.mean(np.abs(error))
@@ -98,7 +110,7 @@ class SugenoFISTester(object):
         Calculates the Mean Absolute Percentage Error of the model given the test data.
         
         Returns:
-            Mean Absolute Percentage Error
+            The Mean Absolute Percentage Error of the fuzzy model.
         """
         
         if self._golden_standard is None:
