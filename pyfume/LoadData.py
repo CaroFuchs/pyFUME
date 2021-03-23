@@ -54,7 +54,7 @@ class DataLoader(object):
             # Convert to matrix for pyFUME processing and 
             # store the names of the columns as variable names.
             self.data = new_data_frame.to_numpy()           
-            self.variable_names = list(new_data_frame.columns)
+            self.variable_names = list(new_data_frame.columns)[:-1]
             
             if verbose:
                 print(" * Variable names:", self.variable_names)
@@ -95,6 +95,4 @@ class DataLoader(object):
 
 if __name__ == "__main__":
 
-    import pandas as pd
-    DF = pd.read_csv("examples\\serious-injury-outcome-indicators-2000-19.csv")
-    DL = DataLoader(dataframe=DF, process_categorical=False)
+    pass

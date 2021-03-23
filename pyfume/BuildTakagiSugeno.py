@@ -35,6 +35,9 @@ class BuildTSFIS(object):
         self.nr_clus = nr_clus
         self.variable_names = variable_names
         self._antecedent_estimator = None
+        verbose = False
+
+        if 'verbose' in kwargs.keys(): verbose = kwargs['verbose']
         
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
@@ -67,9 +70,9 @@ class BuildTSFIS(object):
         
         # Load the data
         if self.datapath is None:
-            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'])
+            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         else:
-            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'])
+            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         self.variable_names=dl.variable_names        
 
         # Create a DataSplitter object
@@ -83,7 +86,8 @@ class BuildTSFIS(object):
         #######
         
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
-            print(' * Hold-out method selected.')
+           
+            if verbose: print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
@@ -108,7 +112,7 @@ class BuildTSFIS(object):
             # Perform feature selection if requested
             if kwargs['feature_selection'] != None:
                 if 'feature_selection_performance_metric' not in kwargs.keys(): kwargs['feature_selection_performance_metric'] = 'MAE'
-                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'])
+                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'])
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()
@@ -125,7 +129,7 @@ class BuildTSFIS(object):
                 self.selected_variable_names= self.variable_names
                 
             # Cluster the training data (in input-output space) using FCM
-            cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
+            cl = Clusterer(self.x_train, self.y_train, self.nr_clus, verbose=verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
@@ -145,7 +149,7 @@ class BuildTSFIS(object):
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
             # Calculate the firing strengths
-            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names, **kwargs)
+            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names,  **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
   
             # Estimate the parameters of the consequent
@@ -166,7 +170,7 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 
                 save_simpful_code=kwargs['save_simpful_code'], 
-                fuzzy_sets_to_drop=what_to_drop)
+                fuzzy_sets_to_drop=what_to_drop, verbose=verbose)
     
             self.model = simpbuilder.simpfulmodel
             

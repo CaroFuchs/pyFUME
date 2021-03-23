@@ -24,6 +24,7 @@ class SugenoFISBuilder(object):
         #super(SugenoFISBuilder, self).__init__()
         super().__init__()
 
+       
         self._SC = SimpfulConverter(
             input_variables_names = variable_names,
             consequents_matrix = consequent_parameters,
@@ -34,6 +35,8 @@ class SugenoFISBuilder(object):
             fuzzy_sets_to_drop=fuzzy_sets_to_drop,
             verbose = verbose)
         
+        # save_simpful_code can be either True (save on default file), 
+        # False (not not save anything), or a path to a file.
         if save_simpful_code==True:
             self._SC.save_code("Simpful_code.py")
         elif save_simpful_code != False:
