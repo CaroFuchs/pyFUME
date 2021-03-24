@@ -51,7 +51,7 @@ path='./Concrete_data.csv'
 nc=3
 
 # Generate the Takagi-Sugeno FIS
-FIS = pyFUME(datapath=path, nr_clus=nc, normaliztion='minmax', feature_selection=True)
+FIS = pyFUME(datapath=path, nr_clus=nc, normalization='minmax', feature_selection=True)
 
 # Calculate and print the accuracy of the generated model
 MAE=FIS.calculate_error(method="MAE")
@@ -102,7 +102,7 @@ ds = DataSplitter(dl.dataX,dl.dataY)
 x_train, y_train, x_test, y_test = ds.holdout(dataX, dataY)
 
 # Select features relevant to the problem
-fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names)
+fs=FeatureSelector(x_train, y_train, nr_clus, variable_names)
 selected_feature_indices, variable_names=fs.wrapper()
 
 # Adapt the training and test input data after feature selection
