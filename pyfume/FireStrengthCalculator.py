@@ -31,7 +31,7 @@ class FireStrengthCalculator(object):
             operators=kwargs["operators"], 
             save_simpful_code=False, 
             fuzzy_sets_to_drop=self.what_to_drop,
-            verbose = verbose)
+            verbose = False)
 
         self.dummymodel = simpbuilder.simpfulmodel
         

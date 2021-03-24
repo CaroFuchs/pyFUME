@@ -1,14 +1,17 @@
-import numpy as np
-from .BuildTakagiSugeno import *
-from .Clustering import *
-from .EstimateAntecendentSet import *
-from .EstimateConsequentParameters import *
-from .LoadData import *
-from .simpfulfier import *
-from .SimpfulModelBuilder import *
-from .Splitter import *
-from .Tester import SugenoFISTester
+from .BuildTakagiSugeno import BuildTSFIS
+from .LoadData import DataLoader
+from .Splitter import DataSplitter
+from .SimpfulModelBuilder import SugenoFISBuilder
+from .Clustering import Clusterer
+from .EstimateAntecendentSet import AntecedentEstimator
 from .FireStrengthCalculator import FireStrengthCalculator
+from .EstimateConsequentParameters import ConsequentEstimator
+from .Tester import SugenoFISTester
+from .FeatureSelection import FeatureSelector
+from .Sampler import Sampler
+from .simpfulfier import SimpfulConverter
+
+import numpy as np
 
 class pyFUME(object):
     """
