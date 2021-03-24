@@ -1,3 +1,4 @@
+import numpy as np
 from .BuildTakagiSugeno import *
 from .Clustering import *
 from .EstimateAntecendentSet import *
@@ -8,9 +9,6 @@ from .SimpfulModelBuilder import *
 from .Splitter import *
 from .Tester import SugenoFISTester
 from .FireStrengthCalculator import FireStrengthCalculator
-
-
-import numpy as np
 
 class pyFUME(object):
     """
