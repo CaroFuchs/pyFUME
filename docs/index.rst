@@ -17,7 +17,7 @@ Installation
 ***************
 You can install pyFUME with the command
 ::
-pip install pyfume
+   pip install pyfume
 
 
 Additional information
