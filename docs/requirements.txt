@@ -1,5 +1,7 @@
 numpy
+numpy.matlib
 scipy
+scipy.optimize
 simpful
 fst-pso
 Sphinx==3.3.1
