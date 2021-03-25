@@ -91,7 +91,7 @@ class BuildTSFIS(object):
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
-            self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dl.dataX, dl.dataY)
+            self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dataX=dl.dataX, dataY=dl.dataY)
             # Check if there are any missing variables and impute them
             if np.isnan(dl.dataX).any()== True:
                 try:
@@ -129,7 +129,7 @@ class BuildTSFIS(object):
                 self.selected_variable_names= self.variable_names
                 
             # Cluster the training data (in input-output space) using FCM
-            cl = Clusterer(self.x_train, self.y_train, self.nr_clus, verbose=verbose)
+            cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
@@ -143,17 +143,17 @@ class BuildTSFIS(object):
                 
             
             # Estimate the membership funtions of the system (default shape: gauss)
-            self._antecedent_estimator = AntecedentEstimator(self.x_train, self.partition_matrix)
+            self._antecedent_estimator = AntecedentEstimator(x_train=self.x_train, partition_matrix=self.partition_matrix)
     
             self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
             # Calculate the firing strengths
-            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names,  **kwargs)
-            self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
+            fsc=FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.variable_names,  **kwargs)
+            self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
   
             # Estimate the parameters of the consequent
-            ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths)
+            ce = ConsequentEstimator(x_train=self.x_train, y_train=self.y_train, firing_strengths=self.firing_strengths)
             if kwargs['model_order'] == 'first':
                 self.consequent_parameters = ce.suglms()
             elif kwargs['model_order'] == 'zero':

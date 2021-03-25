@@ -7,25 +7,33 @@ from scipy.linalg import norm
 # To do:
 # Give option to cluster in input or input-output space?
 # More clustering methods
+# data input argument
+
 
 class Clusterer(object):
     """
-        Creates a new clusterer object that can cluster the (training) data in 
-        the input-output feature space.
+        Creates a new clusterer object that can cluster the (training) data in the input-output feature space. The user should specify the 'data'argument OR the 'x_train' and 'y_train' argument.
         
         Args:
-            x_train: The input data.
-            y_train: The output data (true label/golden standard).
             nr_clus: Number of clusters that should be identified in the data.  
+            x_train: The input data (default = None).
+            y_train: The output data (true label/golden standard) (default = None).
+            data: The data to be clustered (default = None).
     """ 
     
-    def __init__(self, x_train, y_train, nr_clus, verbose=False):
+    def __init__(self, nr_clus, x_train=None, y_train=None, data=None, verbose=False):
         self.x_train=x_train
         self.y_train=y_train
-        self.data=np.concatenate((self.x_train,self.y_train.reshape(len(self.y_train),1)),axis=1)
         self.nr_clus = nr_clus
         self._verbose = verbose
-        
+
+        if data is None and (x_train is None or y_train is None):
+            raise Exception("Please specify a valid dataset for clustering.")
+        elif data is not None:
+        	self.data=data
+        else:
+        	self.data=np.concatenate((self.x_train,self.y_train.reshape(len(self.y_train),1)),axis=1)
+
 
     def cluster(self, method="fcm", **kwargs):
         """
