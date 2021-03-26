@@ -2,7 +2,8 @@
 
 pyFUME is a Python package for automatic Fuzzy Models Estimation from data [1].
 pyFUME contains functions to estimate the antecedent sets and the consequent parameters of a Takagi-Sugeno fuzzy model directly from data. This information is then used to create an executable fuzzy model using the Simpful library.
-pyFUME also provides facilities for the evaluation of performance from a statistical standpoint.
+pyFUME also provides facilities for the evaluation of performance.
+For more information about pyFUME's functionalities, please check the [online documentation](https://pyfume.readthedocs.io/en/latest/).
 
 ## Usage
 For the following example, we use the Concrete Compressive Strength data set [2] as can be found in the UCI repository.
