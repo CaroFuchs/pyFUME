@@ -54,9 +54,9 @@ class Clusterer(object):
             print(" * Clustering method:", method)
 
         try:
-            m = kwargs["m"]
+            self.m = kwargs["m"]
         except:
-            m = 2
+            self.m = 2
 
         if method == "fcm":
             try:
@@ -71,7 +71,7 @@ class Clusterer(object):
 #                seed = kwargs["seed"]
 #            except:
 #                seed = None
-            centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=m, max_iter=max_iter, error=error)
+            centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=self.m, max_iter=max_iter, error=error)
         
         elif method == 'gk' or method == 'GK' or method == 'Gustafson-Kessel' or method == 'gustafson-kessel' or method == 'g-k':
             try:
@@ -82,7 +82,7 @@ class Clusterer(object):
                 error = kwargs["gk_error"]
             except:
                 error = 0.005
-            centers, partition_matrix, jm =self._gk(max_iter=max_iter) 
+            centers, partition_matrix, jm =self._gk(m=self.m, max_iter=max_iter) 
             print(partition_matrix)               
 
         elif method == "pfcm":
@@ -107,7 +107,7 @@ class Clusterer(object):
             except:
                 b = 0.5
 
-            centers, partition_matrix, typicality_matrix, jm = self._pfcm(data=self.data, n_clusters=self.nr_clus, m=m, n=n, max_iter=max_iter, error=error, a=a, b=b)    
+            centers, partition_matrix, typicality_matrix, jm = self._pfcm(data=self.data, n_clusters=self.nr_clus, m=self.m, n=n, max_iter=max_iter, error=error, a=a, b=b)    
 
         elif method == "fst-pso":
             try:
@@ -127,7 +127,7 @@ class Clusterer(object):
             except:
                 path_sol_dump = None
 
-            centers, partition_matrix, jm = self._fstpso(data=self.data, n_clusters=self.nr_clus, max_iter=max_iter, n_particles=n_particles, m=m, path_fit_dump=path_fit_dump, path_sol_dump=path_sol_dump)
+            centers, partition_matrix, jm = self._fstpso(data=self.data, n_clusters=self.nr_clus, max_iter=max_iter, n_particles=n_particles, m=self.m, path_fit_dump=path_fit_dump, path_sol_dump=path_sol_dump)
 
         return centers, partition_matrix, jm
 
@@ -321,7 +321,7 @@ class Clusterer(object):
 
         return U, T, centers, jm, g
 
-    def _gk(self, max_iter=100):
+    def _gk(self, m=2, max_iter=100):
         
         # Initialize the partition matrix
         u = np.random.dirichlet(np.ones(self.data.shape[0]), size=self.nr_clus)
@@ -333,13 +333,13 @@ class Clusterer(object):
             u_old = u.copy()   # keep old partition matrix to evaluate stopping criterium
             
             # Caluculate the locations of the cluster centers
-            centers = self._next_centers_gk(self.data, u)
+            centers = self._next_centers_gk(data=self.data, u=u, m=m)
             
             # Calculate the covariance matrix
-            f = self._covariance_gk(self.data, centers, u)
+            f = self._covariance_gk(data=self.data, v=centers, u=u, m=m)
             
             # Calculate the distance between cluster centers and data points
-            dist = self._distance_gk(self.data, centers, f)
+            dist = self._distance_gk(data=self.data, v=centers, f=f)
             
             # calculate objective
             jm = (u * dist ** 2).sum()
@@ -353,11 +353,11 @@ class Clusterer(object):
                 iteration = max_iter
         return centers, u, jm 
 
-    def _next_centers_gk(self, data, u):
-        um = u ** self.m
+    def _next_centers_gk(self, data, u, m=2):
+        um = u ** m
         return ((um @ data).T / um.sum(axis=1)).T
 
-    def _covariance(self, data, v, u):
+    def _covariance(self, data, v, u, m=2):
         um = u ** self.m
 
         denominator = um.sum(axis=1).reshape(-1, 1, 1)
