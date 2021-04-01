@@ -357,7 +357,7 @@ class Clusterer(object):
         um = u ** m
         return ((um @ data).T / um.sum(axis=1)).T
 
-    def _covariance(self, data, v, u, m=2):
+    def _covariance_gk(self, data, v, u, m=2):
         um = u ** self.m
 
         denominator = um.sum(axis=1).reshape(-1, 1, 1)
@@ -368,7 +368,7 @@ class Clusterer(object):
 
         return numerator / denominator
 
-    def _distance(self, data, v, f):
+    def _distance_gk(self, data, v, f):
         dif = np.expand_dims(data.reshape(data.shape[0], 1, -1) - v.reshape(1, v.shape[0], -1), axis=3)
         determ = np.power(np.linalg.det(f), 1 / self.m)
         det_time_inv = determ.reshape(-1, 1, 1) * np.linalg.pinv(f)
