@@ -376,7 +376,7 @@ class Clusterer(object):
         output = np.matmul(temp, dif).squeeze().T
         return np.fmax(output, 1e-8)
 
-    def _next_u(self, d):
+    def _next_u_gk(self, d):
         power = float(1 / (self.m - 1))
         d = d.transpose()
         new_u = d.reshape((d.shape[0], 1, -1)).repeat(d.shape[-1], axis=1)
