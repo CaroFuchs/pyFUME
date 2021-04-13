@@ -154,6 +154,15 @@ class pyFUME(object):
         if normalize == True:
             firing_strengths=firing_strengths/firing_strengths.sum(axis=1)[:,None]
         return firing_strengths
+    
+    def get_performance_per_fold(self):
+        """
+        Returns a list with the performances of each model that is created if crossvalidation is used when training..
+
+        Returns:
+            Perfomance of each cross validation model..
+        """
+        return FIS.FIS.MAE_per_fold
         
     def _get_RMSE(self):
         # Calculate the mean squared error of the model using the test data set

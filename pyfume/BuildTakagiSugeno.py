@@ -66,6 +66,7 @@ class BuildTSFIS(object):
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
+        if 'verbose' not in kwargs.keys(): kwargs['verbose'] = True
           
         
         # Load the data
@@ -99,7 +100,7 @@ class BuildTSFIS(object):
                 except ImportError:
                     raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
 
-                print('Warning: Your data contains missing values that will be imputed using KNN.')   
+                if verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)
                 self.x_test=imputer.fit_transform(self.x_test)
@@ -176,7 +177,7 @@ class BuildTSFIS(object):
             
         elif kwargs['data_split_method']=='cross_validation' or kwargs['data_split_method']=='k-fold_cross_validation' or kwargs['data_split_method']=='crossvalidation' or kwargs['data_split_method']=='cv':
             if 'number_of_folds' not in kwargs.keys(): kwargs['number_of_folds'] = 10
-            print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
+            if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
             
             #Create lists with test indices for each fold.
             self.fold_indices = ds.kfold(data_length=len(dl.dataX), number_of_folds=kwargs['number_of_folds'])
@@ -200,7 +201,7 @@ class BuildTSFIS(object):
             
             
             for fold_number in range(0, kwargs['number_of_folds']):
-                print('Training the model for fold', fold_number)
+                if verbose: print('Training the model for fold', fold_number)
                 tst_idx=self.fold_indices[fold_number]
                 tst_idx = tst_idx[~np.isnan(tst_idx)]
                 tst_idx = [int(x) for x in tst_idx]
@@ -220,7 +221,7 @@ class BuildTSFIS(object):
                     except ImportError:
                         raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
 
-                    print('Warning: Your data contains missing values that will be imputed using KNN.')   
+                    if verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
                     imputer = KNNImputer(n_neighbors=3, weights="uniform")
                     self.x_train=imputer.fit_transform(self.x_train)
                     self.x_test=imputer.fit_transform(self.x_test)
@@ -282,7 +283,8 @@ class BuildTSFIS(object):
                     extreme_values = self._antecedent_estimator._extreme_values,
                     operators=kwargs["operators"], 
                     save_simpful_code='Fold_' + str(fold_number) +'_Simpful_code.py', 
-                    fuzzy_sets_to_drop=what_to_drop)
+                    fuzzy_sets_to_drop=what_to_drop,
+                    verbose=False)
         
                 self.model = simpbuilder.simpfulmodel
                 
@@ -296,11 +298,11 @@ class BuildTSFIS(object):
                 
             # set working directory back to where script is stored
             os.chdir(owd)
-            print(self.MAE_per_fold)
+            #print(self.MAE_per_fold)
             print('The average MAE over ' + str(kwargs['number_of_folds']) +' folds is ', str(np.mean(self.MAE_per_fold)) +' (with st. dev. ' + str(np.std(self.MAE_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.MAE_per_fold)) + ' with MAE = ' + str(np.min(self.MAE_per_fold)) + '.')
                 
         elif kwargs['data_split_method'] == 'no_split':
-            print('No test data will be split off, all data will be used for training.')
+            if verbose: print('No test data will be split off, all data will be used for training.')
             
             self.x_train = dl.dataX.copy()
             self.y_train = dl.dataY.copy()
@@ -311,7 +313,7 @@ class BuildTSFIS(object):
                 except ImportError:
                     raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
 
-                print('Warning: Your data contains missing values that will be imputed using KNN.')
+                if verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')
     
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)
@@ -379,7 +381,8 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 
                 save_simpful_code=kwargs['save_simpful_code'], 
-                fuzzy_sets_to_drop=what_to_drop)
+                fuzzy_sets_to_drop=what_to_drop,
+                verbose=verbose)
     
             self.model = simpbuilder.simpfulmodel
             
