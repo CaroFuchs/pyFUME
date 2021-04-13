@@ -246,7 +246,7 @@ class BuildTSFIS(object):
                     self.selected_variable_names= self.variable_names                    
                 
                 # Cluster the training data (in input-output space) using FCM
-                cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
+                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus)
                 
                 if kwargs['cluster_method'] == 'fcm':
                     self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
@@ -266,8 +266,8 @@ class BuildTSFIS(object):
                 what_to_drop = self._antecedent_estimator._info_for_simplification
         
                 # Calculate the firing strnegths
-                fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.selected_variable_names, **kwargs)
-                self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
+                fsc=FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.selected_variable_names, **kwargs)
+                self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
                 
                 # Estimate the parameters of the consequent
                 ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths)
@@ -338,7 +338,7 @@ class BuildTSFIS(object):
                 self.selected_variable_names= self.variable_names
                 
             # Cluster the training data (in input-output space) using FCM
-            cl = Clusterer(self.x_train, self.y_train, self.nr_clus)
+            cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 

@@ -214,7 +214,7 @@ class FeatureSelector(object):
         if fs_number_of_folds==1: ##### feauture selection with hold-out
             x_train, y_train, x_val, y_val = ds.holdout(x_data, y_data) 
 
-            cl = Clusterer(x_train, y_train, nr_clus)               
+            cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)               
                 
             if kwargs['cluster_method'] == 'fcm':
                 cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
@@ -278,7 +278,7 @@ class FeatureSelector(object):
                 y_val = np.array([y_data[i] for i in tst_idx]) 
 
                 # Cluster the training data (in input-output space)
-                cl = Clusterer(x_train, y_train, nr_clus)                               
+                cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)                               
                 
                 if kwargs['cluster_method'] == 'fcm':
                     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 

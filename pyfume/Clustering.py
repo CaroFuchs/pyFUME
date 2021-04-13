@@ -32,9 +32,9 @@ class Clusterer(object):
         elif data is not None:
         	self.data=data
         else:
-        	self.data=np.concatenate((self.x_train,self.y_train.reshape(len(self.y_train),1)),axis=1)
+            self.data=np.concatenate((self.x_train, np.expand_dims(self.y_train, axis=1)), axis=1)#.reshape(len(self.y_train),1)),axis=1)
 
-
+                                     
     def cluster(self, method="fcm", **kwargs):
         """
         Clusters the data using the clustering method as specified by the user.
