@@ -79,13 +79,7 @@ print(model.Sugeno_inference(['OUTPUT']))
 ### Example 3
 
 ```
-from LoadData import DataLoader
-from Splitter import DataSplitter
-from ModelBuilder import SugenoFISBuilder
-from Clustering import Clusterer
-from EstimateAntecendentSet import AntecedentEstimator
-from EstimateConsequentParameters import ConsequentEstimator
-from Tester import SugenoFISTester
+from pyfume import *
 
 # Set the path to the data and choose the number of clusters
 path='./Concrete_data.csv'
@@ -99,11 +93,11 @@ dataY=dl.dataY
 
 # Split the data using the hold-out method in a training (default: 75%) 
 # and test set (default: 25%).
-ds = DataSplitter(dl.dataX,dl.dataY)
-x_train, y_train, x_test, y_test = ds.holdout(dataX, dataY)
+ds = DataSplitter()
+x_train, y_train, x_test, y_test = ds.holdout(dataX=dl.dataX, dataY=dl.dataY)
 
 # Select features relevant to the problem
-fs=FeatureSelector(x_train, y_train, nr_clus, variable_names)
+fs=FeatureSelector(dataX=x_train, dataY=y_train, nr_clus=nr_clus, variable_names=variable_names)
 selected_feature_indices, variable_names=fs.wrapper()
 
 # Adapt the training and test input data after feature selection
@@ -111,25 +105,30 @@ x_train = x_train[:, selected_feature_indices]
 x_test = x_test[:, selected_feature_indices]
       
 # Cluster the training data (in input-output space) using FCM with default settings
-cl = Clusterer(x_train, y_train, nr_clus)
+cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)
 cluster_centers, partition_matrix, _ = cl.cluster(method="fcm")
      
 # Estimate the membership funtions of the system (default: mf_shape = gaussian)
-ae = AntecedentEstimator(x_train, partition_matrix)
+ae = AntecedentEstimator(x_train=x_train, partition_matrix=partition_matrix)
 antecedent_parameters = ae.determineMF()
-        
+
+# Calculate the firing strength of each rule for each data instance        
+fsc=FireStrengthCalculator(antecedent_parameters=antecedent_parameters, nr_clus=nr_clus, variable_names=variable_names)
+firing_strengths = fsc.calculate_fire_strength(data=x_train)
+
 # Estimate the parameters of the consequent functions
-ce = ConsequentEstimator(x_train, y_train, partition_matrix)
-consequent_parameters = ce.suglms(x_train, y_train, partition_matrix)
+ce = ConsequentEstimator(x_train=x_train, y_train=y_train, firing_strengths=firing_strengths)
+consequent_parameters = ce.suglms()
         
 # Build a first-order Takagi-Sugeno model using Simpful. Specify the optional 
 # 'extreme_values' argument to specify the universe of discourse of the input
 # variables if you which to use Simpful's membership function plot functionalities.
-simpbuilder = SugenoFISBuilder(antecedent_parameters, consequent_parameters, variable_names)
+simpbuilder = SugenoFISBuilder(antecedent_sets=antecedent_parameters, consequent_parameters=consequent_parameters, variable_names=variable_names)
 model = simpbuilder.get_model()
-        
+
 # Calculate the mean squared error (MSE) of the model using the test data set
-MAE = test.calculate_MAE(variable_names=variable_names)
+test=SugenoFISTester(model=model, test_data=x_test, variable_names=variable_names, golden_standard=y_test)
+MAE = test.calculate_MAE()
 
 print('The mean absolute error of the created model is', MAE)
 ```
