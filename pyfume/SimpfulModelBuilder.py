@@ -45,3 +45,6 @@ class SugenoFISBuilder(object):
         self._SC.generate_object()
 
         self.simpfulmodel = self._SC._fuzzyreasoner
+    
+    def get_model(self):
+        return self.simpfulmodel

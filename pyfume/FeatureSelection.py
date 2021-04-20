@@ -41,7 +41,7 @@ class FeatureSelector(object):
         """
             
         # Create a training and valiadation set for the feature selection phase
-        ds = DataSplitter(self.dataX, self.dataY)
+        ds = DataSplitter()
         x_feat, y_feat, x_val, y_val = ds.holdout(self.dataX, self.dataY)
         
         # Set initial values for the performance
@@ -64,7 +64,7 @@ class FeatureSelector(object):
                 feat=x_feat[:,considered_features]
                 x_validation=x_val[:,considered_features] 
                 
-                perfs[f] = self._evaluate_feature_set(x_train=feat, y_train=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                perfs[f] = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
             
             new_performance=min(perfs)
             new_feature=unselected_features[perfs.index(new_performance)]
@@ -190,7 +190,7 @@ class FeatureSelector(object):
         return error
     
     def _evaluate_feature_set(self, x_data, y_data, nr_clus, var_names, model_order='first', performance_metric='MAE', fs_number_of_folds=3, **kwargs):
-        # Check settings and complete with defaukt settings when needed
+        # Check settings and complete with default settings when needed
         if 'merge_threshold' not in kwargs.keys(): kwargs['merge_threshold'] = 1.0
         if 'cluster_method' not in kwargs.keys(): kwargs['cluster_method'] = 'fcm'        
         if kwargs['cluster_method'] == 'fcm':
@@ -206,6 +206,7 @@ class FeatureSelector(object):
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
+        if 'verbose' not in kwargs.keys(): kwargs['verbose'] = False
                 
         # Split the data using the hold-out method in a training (default: 75%) 
         # and test set (default: 25%).
@@ -253,7 +254,8 @@ class FeatureSelector(object):
                 operators=kwargs["operators"], 
                 model_order=self.model_order,
                 save_simpful_code=False, 
-                fuzzy_sets_to_drop=what_to_drop)
+                fuzzy_sets_to_drop=what_to_drop,
+                verbose=kwargs['verbose'])
 
             model = simpbuilder.simpfulmodel
             
@@ -319,7 +321,8 @@ class FeatureSelector(object):
                     operators=kwargs["operators"], 
                     model_order=self.model_order,
                     save_simpful_code=False, 
-                    fuzzy_sets_to_drop=what_to_drop)
+                    fuzzy_sets_to_drop=what_to_drop,
+                    verbose=kwargs['verbose'])
 
                 model = simpbuilder.simpfulmodel
                 
