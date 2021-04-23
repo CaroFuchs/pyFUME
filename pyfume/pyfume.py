@@ -192,6 +192,25 @@ class pyFUME(object):
         test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
         MAPE = test.calculate_MAPE()
         return MAPE
+    
+    def get_data(self, data_set='test'):
+        """
+        Returns the test or training data set.
+        
+        Args:
+            xdata: The input data (as numpy array with each row a different data instance and variables in the same order as in the original training data set) for which the labels should be calculated. 
+            normalize: Boolean that indicates whether the retuned fiing strengths should be normalized (normalize = True) or not (normalize = False), When the firing strenghts are nomalized the summed fiing strengths for each data instance equals one.
+         
+        Returns:
+            Tuple (x_data, y_data) containing the test or training data set.
+        """  
+      
+        if data_set == 'train':
+            return self.FIS.x_train, self.FIS.y_train
+        elif data_set == 'test':
+            return self.FIS.x_test, self.FIS.y_test
+        else:
+            print('Please specify whether you would like to receive the training (data_set = "train") or test set (data_set = "test").')
 
 if __name__=='__main__':
     from numpy.random import seed
