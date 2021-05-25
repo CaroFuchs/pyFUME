@@ -34,10 +34,12 @@ class DataLoader(object):
             # valid dataframe specified: proceed with creating pyFUME's data structures
 
             new_data_frame = deepcopy(dataframe)
+            output_name=dataframe.columns[-1]
             
             if process_categorical:
                 if verbose: print(" * Processing categorical data.")
                 new_data_frame = pd.get_dummies(new_data_frame) 
+                new_data_frame = new_data_frame[ [ col for col in new_data_frame.columns if col != output_name ] + [output_name] ]
 
             else:
                 list_categorical = self._check_categorical(dataframe)    

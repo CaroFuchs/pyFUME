@@ -26,10 +26,10 @@ class DataSplitter(object):
                         (default = 0.75).
                     
                 Returns:
-                Tuple containing (x_train, x_test, y_train, y_test)
+                Tuple containing (x_train, y_train, x_test, y_test)
                         - x_train: Input variables of the training data.
-                        - x_test: Input variables of the test data.
                         - y_train: Output variables (true label/golden standard) of the training data.
+                        - x_test: Input variables of the test data.
                         - y_test: Output variables (true label/golden standard) of the test data.
         """
         

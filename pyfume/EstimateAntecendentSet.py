@@ -47,6 +47,10 @@ class AntecedentEstimator(object):
         number_of_variables = self.xtrain.shape[1]
         for i in range(0, number_of_variables):
             xin = self.xtrain[:,i]
+            if all(y in (0, 1) for y in xin):           # Add noise to binary variables
+                noise = np.random.normal(0,0.001,xin.shape[0]) 
+                xin= xin + noise
+                
             for j in range(0, self.partition_matrix.shape[1]):
                 mfin = self.partition_matrix[:,j]
                 mf, xx = self._convexMF(xin=xin, mfin=mfin)

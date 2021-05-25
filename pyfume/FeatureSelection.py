@@ -18,13 +18,14 @@ class FeatureSelector(object):
             variable_names: Names of the variables
             **kwargs: Additional arguments to change settings of the fuzzy model.
     """
-    def __init__(self, dataX, dataY, nr_clus, variable_names, model_order='first', performance_metric='MAE', **kwargs):
+    def __init__(self, dataX, dataY, nr_clus, variable_names, model_order='first', performance_metric='MAE', verbose=True, **kwargs):
         self.dataX=dataX
         self.dataY=dataY
         self.nr_clus = nr_clus
         self.variable_names = variable_names
         self.performance_metric = performance_metric
         self.model_order=model_order
+        self.verbose=verbose
         
     def wrapper(self,**kwargs):
         """
@@ -59,13 +60,19 @@ class FeatureSelector(object):
             perfs= [np.inf]*np.size(x_feat,axis=1)
             
             for f in [x for x in unselected_features if x != -1]:
+                from itertools import compress 
                 considered_features = selected_features + [f]
-                var_names=self.variable_names[considered_features] 
+                var_names=list(compress(self.variable_names, considered_features))
                 feat=x_feat[:,considered_features]
                 x_validation=x_val[:,considered_features] 
                 
-                perfs[f] = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
-            
+                try:
+                    perfs[f] = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                except RuntimeError:
+                    raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info.')
+                    import sys
+                    sys.exit(1)
+                    
             new_performance=min(perfs)
             new_feature=unselected_features[perfs.index(new_performance)]
             
@@ -142,7 +149,7 @@ class FeatureSelector(object):
         FP.set_search_space_discrete(s)
         
         # Set the fitness function
-        args={'x_train': self.dataX, 'y_train': self.dataY}
+        args={'x_train': self.dataX, 'y_train': self.dataY, 'verbose':self.verbose}
         FP.set_fitness(self._function, arguments=args)
         
         # solve problem with FST-PSO
@@ -155,8 +162,11 @@ class FeatureSelector(object):
     
         
         # Show best solution with fitness value
-        print(selected_features)
-        varnams=self.variable_names[selected_features]
+        # print(selected_features)
+        # print(len(selected_features))
+        # print(self.variable_names)
+        # print(len(self.variable_names))
+        varnams=[i for indx,i in enumerate(self.variable_names) if selected_features[indx]]
         print('The following features have been selected:', varnams, 'with a', self.performance_metric, 'of', round(best_performance,2))
         
         if self.nr_clus == None:
@@ -170,7 +180,7 @@ class FeatureSelector(object):
 #    def fun(self, particle):
 #        return sum(particle)
     
-    def _function(self, particle, arguments, **kwargs):
+    def _function(self, particle, arguments, verbose=True, **kwargs):
         from itertools import compress 
         if self.nr_clus == None:
             A = arguments['x_train'][:,particle[:-1]]
@@ -186,7 +196,7 @@ class FeatureSelector(object):
         else:
             error=self._evaluate_feature_set(x_data=A, y_data=arguments['y_train'], nr_clus=nr_clus, var_names=varnams, model_order=self.model_order, performance_metric=self.performance_metric, **kwargs)
             
-        print(" * Fitness: %.3f" % error)
+        if verbose: print(" * Fitness: %.3f" % error)
         return error
     
     def _evaluate_feature_set(self, x_data, y_data, nr_clus, var_names, model_order='first', performance_metric='MAE', fs_number_of_folds=3, **kwargs):
@@ -205,7 +215,6 @@ class FeatureSelector(object):
         if 'mf_shape' not in kwargs.keys(): kwargs['mf_shape'] = 'gauss'       
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
-        if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'verbose' not in kwargs.keys(): kwargs['verbose'] = False
                 
         # Split the data using the hold-out method in a training (default: 75%) 
@@ -251,7 +260,7 @@ class FeatureSelector(object):
                 consequent_parameters, 
                 var_names, 
                 extreme_values = antecedent_estimator._extreme_values,
-                operators=kwargs["operators"], 
+                operators=kwargs['operators'], 
                 model_order=self.model_order,
                 save_simpful_code=False, 
                 fuzzy_sets_to_drop=what_to_drop,
@@ -265,72 +274,157 @@ class FeatureSelector(object):
         
         elif fs_number_of_folds>1:  ##### feauture selection with cross validation
             fold_indices = ds.kfold(data_length=np.shape(x_data)[0], number_of_folds=fs_number_of_folds)
-            perf=[np.inf]*fs_number_of_folds
+            # perf=[np.inf]*fs_number_of_folds
 
+            arg=[]
             for fold_number in range(0, fs_number_of_folds):
-
-                # Prepare data sets for this fold
+                
+                # Choose the indices for training and testing for this fold
                 tst_idx=fold_indices[fold_number]
                 np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
-                trn_idx=np.concatenate(np.delete(fold_indices, fold_number, axis=0))
+                trn_idx=np.concatenate(np.delete(fold_indices, fold_number, axis=0))       # Use all indices, except the ones that are used for testing
                 
                 x_train = np.array([x_data[i,:] for i in trn_idx])
                 x_val = np.array([x_data[i,:] for i in tst_idx])                      
                 y_train = np.array([y_data[i] for i in trn_idx])
                 y_val = np.array([y_data[i] for i in tst_idx]) 
-
-                # Cluster the training data (in input-output space)
-                cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)                               
                 
-                if kwargs['cluster_method'] == 'fcm':
-                    cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
-                        fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
-                elif kwargs['cluster_method'] == 'gk':
-                    cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='gk')
-                elif kwargs['cluster_method'] == 'fstpso':
-                    cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
-                        fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
-                        fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
-                else:
-                    print('The requested clustering method is not (yet) implemented')
-                     
-                # Estimate the membership funtions of the system (default shape: gauss)
-                antecedent_estimator = AntecedentEstimator(x_train, partition_matrix)
-
-                antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
-                what_to_drop = antecedent_estimator._info_for_simplification
-
-                # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
-                fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names, **kwargs)
-                firing_strengths = fsc.calculate_fire_strength(x_train)
-
-                # Estimate the parameters of the consequent
-                ce = ConsequentEstimator(x_train, y_train, firing_strengths)
+                arg.append([x_train, y_train, x_val, y_val, nr_clus, var_names])
             
-                if self.model_order=='first':
-                    consequent_parameters = ce.suglms()
-                elif self.model_order== 'zero':
-                    consequent_parameters = ce.zero_order()
-                    
-                # Build a first-order Takagi-Sugeno model using Simpful
-                simpbuilder = SugenoFISBuilder(
-                    antecedent_parameters, 
-                    consequent_parameters, 
-                    var_names, 
-                    extreme_values = antecedent_estimator._extreme_values,
-                    operators=kwargs["operators"], 
-                    model_order=self.model_order,
-                    save_simpful_code=False, 
-                    fuzzy_sets_to_drop=what_to_drop,
-                    verbose=kwargs['verbose'])
-
-                model = simpbuilder.simpfulmodel
+            try:
+                from multiprocessing import Pool
+            except ImportError:
+                    raise Exception('pyFUME uses multiprocessing to parallelize computations, but couldn`t find \'multiprocessing\'. Please pip install multiprocessing to proceed.')
+            
+            try:
+                with Pool(fs_number_of_folds) as p:
+                    perf=p.starmap(func=self._create_model, iterable=arg)
+            except RuntimeError:
+                raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info')
+                import os
+                import signal
+                os.kill(os.getppid(), signal.SIGKILL)
                 
-                # Test the model
-                test = SugenoFISTester(model=model, test_data=x_val, golden_standard=y_val,variable_names=var_names)
-                perf[fold_number]= test.calculate_performance(metric=self.performance_metric) 
-
             performance = np.mean(perf)
+            
+            return performance
 
-        return performance
+
+            #     # Cluster the training data (in input-output space)
+            #     cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)                               
+                
+            #     if kwargs['cluster_method'] == 'fcm':
+            #         cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
+            #             fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
+            #     elif kwargs['cluster_method'] == 'gk':
+            #         cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='gk')
+            #     elif kwargs['cluster_method'] == 'fstpso':
+            #         cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
+            #             fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
+            #             fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
+            #     else:
+            #         print('The requested clustering method is not (yet) implemented')
+                     
+            #     # Estimate the membership funtions of the system (default shape: gauss)
+            #     antecedent_estimator = AntecedentEstimator(x_train, partition_matrix)
+
+            #     antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
+            #     what_to_drop = antecedent_estimator._info_for_simplification
+
+            #     # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
+            #     fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names, **kwargs)
+            #     firing_strengths = fsc.calculate_fire_strength(x_train)
+
+            #     # Estimate the parameters of the consequent
+            #     ce = ConsequentEstimator(x_train, y_train, firing_strengths)
+            
+            #     if self.model_order=='first':
+            #         consequent_parameters = ce.suglms()
+            #     elif self.model_order== 'zero':
+            #         consequent_parameters = ce.zero_order()
+                    
+            #     # Build a first-order Takagi-Sugeno model using Simpful
+            #     simpbuilder = SugenoFISBuilder(
+            #         antecedent_parameters, 
+            #         consequent_parameters, 
+            #         var_names, 
+            #         extreme_values = antecedent_estimator._extreme_values,
+            #         operators=kwargs["operators"], 
+            #         model_order=self.model_order,
+            #         save_simpful_code=False, 
+            #         fuzzy_sets_to_drop=what_to_drop,
+            #         verbose=kwargs['verbose'])
+
+            #     model = simpbuilder.simpfulmodel
+                
+            #     # Test the model
+            #     test = SugenoFISTester(model=model, test_data=x_val, golden_standard=y_val,variable_names=var_names)
+            #     perf[fold_number]= test.calculate_performance(metric=self.performance_metric) 
+
+            # performance = np.mean(perf)
+
+        # return performance
    
+    def _create_model(self, x_train, y_train, x_test, y_test, nr_clus, var_names, **kwargs):
+        # Cluster the training data (in input-output space)
+        cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)
+        cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm')                               
+                
+        # if kwargs['cluster_method'] == 'fcm':
+        #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
+        #         fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
+        # elif kwargs['cluster_method'] == 'gk':
+        #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='gk')
+        # elif kwargs['cluster_method'] == 'fstpso':
+        #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
+        #         fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
+        #         fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
+        # else:
+        #     print('The requested clustering method is not (yet) implemented')
+             
+        # # Estimate the membership funtions of the system (default shape: gauss)
+        antecedent_estimator = AntecedentEstimator(x_train, partition_matrix)
+        
+        antecedent_parameters = antecedent_estimator.determineMF()
+        #antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
+        what_to_drop = antecedent_estimator._info_for_simplification
+
+        # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
+        fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names)
+        firing_strengths = fsc.calculate_fire_strength(x_train)
+
+        # Estimate the parameters of the consequent
+        ce = ConsequentEstimator(x_train, y_train, firing_strengths)
+    
+        if self.model_order=='first':
+            consequent_parameters = ce.suglms()
+        elif self.model_order== 'zero':
+            consequent_parameters = ce.zero_order()
+            
+        # Build a first-order Takagi-Sugeno model using Simpful
+        simpbuilder = SugenoFISBuilder(
+            antecedent_parameters, 
+            consequent_parameters, 
+            var_names, 
+            extreme_values = antecedent_estimator._extreme_values, 
+            model_order=self.model_order,
+            save_simpful_code=False, 
+            fuzzy_sets_to_drop=what_to_drop)
+        
+        # simpbuilder = SugenoFISBuilder(
+        #     antecedent_parameters, 
+        #     consequent_parameters, 
+        #     var_names, 
+        #     extreme_values = antecedent_estimator._extreme_values,
+        #     operators=kwargs['operators'], 
+        #     model_order=self.model_order,
+        #     save_simpful_code=False, 
+        #     fuzzy_sets_to_drop=what_to_drop,
+        #     verbose=kwargs['verbose'])
+
+        model = simpbuilder.simpfulmodel
+        
+        # Test the model
+        test = SugenoFISTester(model=model, test_data=x_test, golden_standard=y_test, variable_names=var_names)
+        perf = test.calculate_performance(metric=self.performance_metric) 
+        return perf

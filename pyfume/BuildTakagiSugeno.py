@@ -67,6 +67,7 @@ class BuildTSFIS(object):
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
         if 'verbose' not in kwargs.keys(): kwargs['verbose'] = True
+        if 'cv_randomID' not in kwargs.keys(): kwargs['cv_randomID'] = False
           
         
         # Load the data
@@ -191,9 +192,18 @@ class BuildTSFIS(object):
                         
             # Create folder to store developed models
             import os, datetime, pickle
-            self.folder_name= 'pyFUME run ' + datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
-            owd = os.getcwd()
+
+            if kwargs['cv_randomID'] == True:
+                try:
+                    import uuid
+                except ImportError:
+                    raise Exception('pyFUME tried to generate random IDs, but couldn`t find \'uuid\'. Please pip install uuid to proceed.')
+                
+                self.folder_name= 'pyFUME runID ' + str(uuid.uuid4())
+            elif kwargs['cv_randomID'] == False:
+                self.folder_name= 'pyFUME run ' + datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
             
+            owd = os.getcwd()
             os.mkdir(self.folder_name)
             os.chdir('./' + self.folder_name)
             
