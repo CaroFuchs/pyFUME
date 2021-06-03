@@ -13,8 +13,8 @@ The code of the Simpful model that is generated is automatically saved (in the s
 
 ## Note
 Please be aware that pyFUME's feature selection functionality makes use of multiprocessing. 
-When feature selection is used, the main script should always be guarded by including "if __name__ == '__main__':" in the header the script.
-When the Spyder IDE is used, one should include "if __name__ == '__main__' and '__file__' in globals():".
+When feature selection is used, the main script should always be guarded by including "if \_\_name\_\_ == '\_\_main\_\_':" in the header the script.
+When the Spyder IDE is used, one should include "if \_\_name\_\_ == '\_\_main\_\_' and '\_\_file\_\_' in globals():".
 
 ### Example 1
 ```
