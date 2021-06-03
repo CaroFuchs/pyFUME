@@ -9,6 +9,12 @@ For more information about pyFUME's functionalities, please check the [online do
 For the following example, we use the Concrete Compressive Strength data set [2] as can be found in the UCI repository.
 The  code  in  Example 1  is  simple  and  easy  to  use,  making it  ideal  to  use  for  practitioners  who  wish  to  use  the  default settings or only wish to use few non-default settings using additional input arguments (Example 2). 
 Users that wish to deviate from  the  default  settings  can  use  the code  as shown  in  Example 3.
+The code of the Simpful model that is generated is automatically saved (in the same location as the pyFUME script is ran from) under the name 'Simpful_code.py'
+
+## Note
+Please be aware that pyFUME's feature selection functionality makes use of multiprocessing. 
+When feature selection is used, the main script should always be guarded by including "if __name__ == '__main__':" in the header the script.
+When the Spyder IDE is used, one should include "if __name__ == '__main__' and '__file__' in globals():".
 
 ### Example 1
 ```
@@ -52,7 +58,7 @@ path='./Concrete_data.csv'
 nc=3
 
 # Generate the Takagi-Sugeno FIS
-FIS = pyFUME(datapath=path, nr_clus=nc, normalization='minmax', feature_selection=True)
+FIS = pyFUME(datapath=path, nr_clus=nc, feature_selection=True)
 
 # Calculate and print the accuracy of the generated model
 MAE=FIS.calculate_error(method="MAE")
@@ -128,9 +134,9 @@ model = simpbuilder.get_model()
 
 # Calculate the mean squared error (MSE) of the model using the test data set
 test=SugenoFISTester(model=model, test_data=x_test, variable_names=variable_names, golden_standard=y_test)
-MAE = test.calculate_MAE()
+MSE = test.calculate_MSE()
 
-print('The mean absolute error of the created model is', MAE)
+print('The mean squared error of the created model is', MSE)
 ```
 
 ### Example 4
@@ -149,7 +155,6 @@ FIS = pyFUME(dataframe=df, nr_clus=2)
 # Calculate and print the accuracy of the generated model
 MAE=FIS.calculate_error(method="MAE")
 print ("The estimated error of the developed model is:", MAE)
-
 
 ### Use the FIS to predict the compressive strength of a new concrete samples
 
@@ -180,6 +185,24 @@ print('The output using pyFUMEs "predict_label" functionality is:', prediction_l
 new_data_multiple_instances=np.array([[300, 50,0,175,0.7,900,600,45],[500, 75,30,200,0.9,600,760,39],[250, 40,10,175,0.3,840,360,51]]) 
 prediction_labels_multiple_instance=FIS.predict_label(new_data_multiple_instances)
 print('The output using pyFUMEs "predict_label" functionality is:', prediction_labels_multiple_instance)
+
+### Plot the actual values vs the predicted values of the test data using the matplotlib library
+
+# Predict the labels of the test data
+pred = FIS.predict_test_data()
+
+# Get the actual labels of the test data
+_, actual = FIS.get_data(data_set='test')
+
+# Create scatterplot
+import matplotlib.pyplot as plt 
+plt.scatter(actual, pred)
+plt.xlabel('Actual value') 
+plt.ylabel('Predicted value')
+plt.plot([0,85],[0,85],'r')     # Add a reference line
+plt.show()
+
+
 ```
 
 ## Installation
