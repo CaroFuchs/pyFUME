@@ -81,6 +81,10 @@ class DataLoader(object):
         self.dataY=self.data[:,-1]
 
         if normalize=='minmax' or normalize=='linear' or normalize==True:
+            mini=np.abs(self.dataX).min(axis=0)
+            maxi=np.abs(self.dataX).max(axis=0)
+            self.normalization_values=zip(self.variable_names, mini, maxi)
+
             self.dataX = (self.dataX - np.abs(self.dataX).min(axis=0)) / (np.abs(self.dataX).max(axis=0)-np.abs(self.dataX).min(axis=0))
 
         elif normalize == 'zscore':

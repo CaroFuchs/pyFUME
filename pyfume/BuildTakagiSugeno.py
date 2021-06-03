@@ -42,9 +42,10 @@ class BuildTSFIS(object):
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
         if 'normalize' not in kwargs.keys(): kwargs['normalize'] = False 
+        if 'percentage_training' not in kwargs.keys(): kwargs['percentage_training'] = 0.75
         if 'oversampling' not in kwargs.keys(): kwargs['oversampling'] = False
         if kwargs['oversampling'] == True:
-            if 'sampling_number_of_bins' not in kwargs.keys(): kwargs['sampling_number_of_bins'] = 5
+            if 'sampling_number_of_bins' not in kwargs.keys(): kwargs['sampling_number_of_bins'] = 2
             if 'sampling_histogram' not in kwargs.keys(): kwargs['sampling_histogram'] = False            
         if 'data_delimiter' not in kwargs.keys(): kwargs['data_delimiter'] = ','
         if 'data_split_method' not in kwargs.keys(): kwargs['data_split_method'] = 'hold-out'
@@ -76,16 +77,16 @@ class BuildTSFIS(object):
         else:
             dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         self.variable_names=dl.variable_names
-
+        
+        if kwargs['normalize'] == True:
+            self.normalization_values=list(dl.normalization_values)
+            print(self.normalization_values[1])
+            self.norm_flag=True
+        else:
+            self.norm_flag = False
+            
         # Create a DataSplitter object
         ds = DataSplitter()
-        
-        ####### For testing only
-        #dl.dataX=dl.dataX[:,:5]
-        #self.variable_names = self.variable_names[:5]
-        
-        #print(dl.dataX, self.variable_names)
-        #######
         
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
            
@@ -93,7 +94,7 @@ class BuildTSFIS(object):
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
-            self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dataX=dl.dataX, dataY=dl.dataY)
+            self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dataX=dl.dataX, dataY=dl.dataY, percentage_training=kwargs['percentage_training'])
             # Check if there are any missing variables and impute them
             if np.isnan(dl.dataX).any()== True:
                 try:
@@ -276,7 +277,7 @@ class BuildTSFIS(object):
                 self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
                 what_to_drop = self._antecedent_estimator._info_for_simplification
         
-                # Calculate the firing strnegths
+                # Calculate the firing strengths
                 fsc=FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.selected_variable_names, **kwargs)
                 self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
                 

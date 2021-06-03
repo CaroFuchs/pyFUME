@@ -46,7 +46,7 @@ class SugenoFISTester(object):
             error = self._golden_standard - result
         else:
             error = np.nan
-            print('The true labels (golden standard) were not provided, so the error could not be calculated.')
+            # print('The true labels (golden standard) were not provided, so the error could not be calculated.')
         return result, error
     
     def calculate_performance(self, metric='MAE'):  

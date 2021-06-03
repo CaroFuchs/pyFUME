@@ -301,9 +301,10 @@ class FeatureSelector(object):
                     perf=p.starmap(func=self._create_model, iterable=arg)
             except RuntimeError:
                 raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info')
+                
                 import os
                 import signal
-                os.kill(os.getppid(), signal.SIGKILL)
+                os.kill(os.getppid(), signal.SIGTERM)
                 
             performance = np.mean(perf)
             

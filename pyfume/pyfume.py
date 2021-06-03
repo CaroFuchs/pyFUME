@@ -113,6 +113,12 @@ class pyFUME(object):
         Returns:
             Prediction labels.
         """
+        # Normalize the input data if needed
+        if self.FIS.norm_flag==True:
+            norm_val=self.FIS.normalization_values
+            variable_names, min_values, max_values = zip(*norm_val)
+            xdata = (xdata - np.array(min_values)) / (np.array(max_values) - np.array(min_values))
+        
         #get the prediction for a new data set
         model = self.get_model()
         test = SugenoFISTester(model=model, test_data=xdata, golden_standard=None, variable_names=self.FIS.variable_names)
