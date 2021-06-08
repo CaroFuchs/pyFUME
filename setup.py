@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name = 'pyFUME', 
-    version = '0.1.24',
+    version = '0.1.25',
     author = 'Caro Fuchs',
     author_email = 'c.e.m.fuchs@tue.nl',
     description = 'A Python package for fuzzy model estimation',
