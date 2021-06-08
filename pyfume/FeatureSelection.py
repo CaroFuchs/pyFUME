@@ -62,9 +62,11 @@ class FeatureSelector(object):
             for f in [x for x in unselected_features if x != -1]:
                 from itertools import compress 
                 considered_features = selected_features + [f]
-                var_names=list(compress(self.variable_names, considered_features))
+                var_names = [self.variable_names[i] for i in considered_features]
                 feat=x_feat[:,considered_features]
                 x_validation=x_val[:,considered_features] 
+                if self.verbose==True: 
+                    print('Evaluating feature sub set including:', var_names)
                 
                 try:
                     perfs[f] = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
@@ -162,10 +164,6 @@ class FeatureSelector(object):
     
         
         # Show best solution with fitness value
-        # print(selected_features)
-        # print(len(selected_features))
-        # print(self.variable_names)
-        # print(len(self.variable_names))
         varnams=[i for indx,i in enumerate(self.variable_names) if selected_features[indx]]
         print('The following features have been selected:', varnams, 'with a', self.performance_metric, 'of', round(best_performance,2))
         
