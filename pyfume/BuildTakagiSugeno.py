@@ -370,7 +370,7 @@ class BuildTSFIS(object):
             self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
-            # Calculate the firing strnegths
+            # Calculate the firing strengths
             fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names, **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
   

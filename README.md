@@ -58,7 +58,7 @@ path='./Concrete_data.csv'
 nc=3
 
 # Generate the Takagi-Sugeno FIS
-FIS = pyFUME(datapath=path, nr_clus=nc, feature_selection=True)
+FIS = pyFUME(datapath=path, nr_clus=nc, feature_selection='fst-pso')
 
 # Calculate and print the accuracy of the generated model
 MAE=FIS.calculate_error(method="MAE")
