@@ -89,7 +89,8 @@ class FeatureSelector(object):
                 print('The selected features have a', self.performance_metric, 'of:', old_performance)
                 stop = True 
        
-        selected_feature_names = self.variable_names[selected_features]
+        # selected_feature_names = self.variable_names[selected_features]
+        selected_feature_names = [self.variable_names[i] for i in selected_features]
         print('The following features were selected:',  selected_feature_names)
         
         return selected_features, selected_feature_names
