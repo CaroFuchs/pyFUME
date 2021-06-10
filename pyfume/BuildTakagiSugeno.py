@@ -38,7 +38,6 @@ class BuildTSFIS(object):
         verbose = False
 
         if 'verbose' in kwargs.keys(): verbose = kwargs['verbose']
-        
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
         if 'normalize' not in kwargs.keys(): kwargs['normalize'] = False 
@@ -70,7 +69,7 @@ class BuildTSFIS(object):
         if 'verbose' not in kwargs.keys(): kwargs['verbose'] = True
         if 'cv_randomID' not in kwargs.keys(): kwargs['cv_randomID'] = False
           
-        
+
         # Load the data
         if self.datapath is None:
             dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
@@ -80,7 +79,6 @@ class BuildTSFIS(object):
         
         if kwargs['normalize'] == True:
             self.normalization_values=list(dl.normalization_values)
-            print(self.normalization_values[1])
             self.norm_flag=True
         else:
             self.norm_flag = False
@@ -131,20 +129,24 @@ class BuildTSFIS(object):
             elif kwargs['feature_selection'] == None:
                 self.selected_variable_names= self.variable_names
                 
-            # Cluster the training data (in input-output space) using FCM
+            # Cluster the training data (in input-output space)
             cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
             
             if kwargs['cluster_method'] == 'fcm':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
                     fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
             elif kwargs['cluster_method'] == 'gk':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='gk')
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='gk')
             elif kwargs['cluster_method'] == 'fst-pso':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fstpso', 
                     fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
                     fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
+            else: 
+                print('ERROR: Choose a valid clustering method.')
+                import sys
+                sys.exit()
+                    
                 
-            
             # Estimate the membership funtions of the system (default shape: gauss)
             self._antecedent_estimator = AntecedentEstimator(x_train=self.x_train, partition_matrix=self.partition_matrix)
     
@@ -261,15 +263,18 @@ class BuildTSFIS(object):
                 cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus)
                 
                 if kwargs['cluster_method'] == 'fcm':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
+                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
                         fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
                 elif kwargs['cluster_method'] == 'fst-pso':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
+                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fstpso', 
                         fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
                         fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
                 elif kwargs['cluster_method'] == 'gk':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='gk')
-                    
+                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='gk')
+                else: 
+                    print('ERROR: Choose a valid clustering method.')
+                    import sys
+                    sys.exit()    
                 
                 # Estimate the membership funtions of the system (default shape: gauss)
                 self._antecedent_estimator = AntecedentEstimator(self.x_train, self.partition_matrix)
@@ -309,7 +314,6 @@ class BuildTSFIS(object):
                 
             # set working directory back to where script is stored
             os.chdir(owd)
-            #print(self.MAE_per_fold)
             print('The average MAE over ' + str(kwargs['number_of_folds']) +' folds is ', str(np.mean(self.MAE_per_fold)) +' (with st. dev. ' + str(np.std(self.MAE_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.MAE_per_fold)) + ' with MAE = ' + str(np.min(self.MAE_per_fold)) + '.')
                 
         elif kwargs['data_split_method'] == 'no_split':
@@ -354,15 +358,18 @@ class BuildTSFIS(object):
             cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus)
             
             if kwargs['cluster_method'] == 'fcm':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['m'], 
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
                     fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
             elif kwargs['cluster_method'] == 'gk':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='gk')
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='gk')
             elif kwargs['cluster_method'] == 'fst-pso':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fstpso', 
                     fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
                     fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
-                
+            else: 
+                print('ERROR: Choose a valid clustering method.')
+                import sys
+                sys.exit()   
             
             # Estimate the membership funtions of the system (default shape: gauss)
             self._antecedent_estimator = AntecedentEstimator(self.x_train, self.partition_matrix)
@@ -399,4 +406,5 @@ class BuildTSFIS(object):
             
         else:
             print('ERROR: invalid data splitting method chosen. Training will be aborted.')
-            exit()
+            import sys
+            sys.exit()

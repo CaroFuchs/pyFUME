@@ -83,7 +83,6 @@ class Clusterer(object):
             except:
                 error = 0.005
             centers, partition_matrix, jm =self._gk(m=self.m, max_iter=max_iter) 
-            print(partition_matrix)               
 
         elif method == "pfcm":
             try:
@@ -109,7 +108,7 @@ class Clusterer(object):
 
             centers, partition_matrix, typicality_matrix, jm = self._pfcm(data=self.data, n_clusters=self.nr_clus, m=self.m, n=n, max_iter=max_iter, error=error, a=a, b=b)    
 
-        elif method == "fst-pso":
+        elif method == "fst-pso" or method == "fstpso":
             try:
                 max_iter = kwargs["fstpso_max_iter"]
             except:
@@ -126,7 +125,6 @@ class Clusterer(object):
                 path_sol_dump = kwargs["fstpso_path_sol_dump"]
             except:
                 path_sol_dump = None
-
             centers, partition_matrix, jm = self._fstpso(data=self.data, n_clusters=self.nr_clus, max_iter=max_iter, n_particles=n_particles, m=self.m, path_fit_dump=path_fit_dump, path_sol_dump=path_sol_dump)
 
         return centers, partition_matrix, jm
@@ -321,7 +319,7 @@ class Clusterer(object):
 
         return U, T, centers, jm, g
 
-    def _gk(self, m=2, max_iter=100):
+    def _gk(self, m=2, max_iter=100, error=0.01):
         
         # Initialize the partition matrix
         u = np.random.dirichlet(np.ones(self.data.shape[0]), size=self.nr_clus)
@@ -349,8 +347,10 @@ class Clusterer(object):
             iteration += 1
 
             # Stopping criteria
-            if norm(u - u_old) < self.error:
+            if norm(u - u_old) < error:
                 iteration = max_iter
+                
+        u=np.transpose(u)        
         return centers, u, jm 
 
     def _next_centers_gk(self, data, u, m=2):
