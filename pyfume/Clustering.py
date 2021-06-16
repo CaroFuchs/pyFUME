@@ -370,7 +370,7 @@ class Clusterer(object):
 
     def _distance_gk(self, data, v, f):
         dif = np.expand_dims(data.reshape(data.shape[0], 1, -1) - v.reshape(1, v.shape[0], -1), axis=3)
-        determ = np.power(np.linalg.det(f), 1 / self.m)
+        determ = np.sign(np.linalg.det(f)) * (np.abs(np.linalg.det(f))) ** (1 / self.m)
         det_time_inv = determ.reshape(-1, 1, 1) * np.linalg.pinv(f)
         temp = np.matmul(dif.transpose((0, 1, 3, 2)), det_time_inv)
         output = np.matmul(temp, dif).squeeze().T

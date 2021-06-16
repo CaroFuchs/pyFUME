@@ -270,18 +270,31 @@ class AntecedentEstimator(object):
             
             # Fit parameters to the data using least squares
 #            print('mu1',mu1,'sig1',sig1,'mu2',mu2,'sig2',sig2)
-            param, _ = curve_fit(self._gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], bounds=((-np.inf, 0), (np.inf, np.inf)), maxfev=1000)
+            param, _ = curve_fit(self._gauss2mf, x, mf, p0 = [mu1, sig1, mu2, sig2], maxfev=1000, bounds=((-np.inf, 0,-np.inf, 0), (np.inf, np.inf,np.inf, np.inf)))
             
         elif mf_shape == 'sigmf':
             # Determine initial parameters
             if np.argmax(mf)-np.argmin(mf) > 0:         # if sloping to the right
-                c = x[mf>=0.5][0]
-                s = 1
+                if len(x[mf>=0.5])>0:
+                    c = x[mf>=0.5][0]
+                    s = 1
+                elif len(x[mf>=0.5])==0:                   # if there are no datapoints with membership larger than 0
+                    c = x[0]
+                    s = 1                    
             elif np.argmax(mf)-np.argmin(mf) < 0:       # if sloping to the left
-                c = x[mf<=0.5][0]
-                s = -1
-            # Fit parameters of the function to the data using non-linear least squares           
-            param, _ = curve_fit(self._sigmf, x, mf, p0 = [c, s])
+                if len(x[mf<=0.5])>0:
+                    c = x[mf<=0.5][0]
+                    s = 1
+                elif len(x[mf<=0.5])==0:                   # if there are no datapoints with membership smaller than 0
+                    c = x[-1]
+                    s = 1             
+            # Fit parameters of the function to the data using non-linear least squares  
+            try:
+                param, _ = curve_fit(self._sigmf, x, mf, p0 = [c, s], maxfev=1000)
+            except RuntimeError:
+                print('pyFUME attempted to fit sigmoidal shaped membership functions, but was unable to find fitting parameters. pyFUME will now terminate. Please consider using a different shape for the membership functions.')
+                import sys
+                sys.exit()
         
         return mf_shape, param
         
