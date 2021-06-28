@@ -15,7 +15,7 @@ class DataLoader(object):
                 the variable names are read from the first line of the CSV file
                 (default = None). 
             normalize: If switch on, the data will be normalized. The user can 
-                choose between 'minmax' or 'zscore' normalization (default = False). 
+                choose between 'minmax', 'zscore' or 'log' normalization (default = False).
             delimiter: Specify the symbol used to separate data in the dataset (default = ',').
             verbose: Enable verbose mode (default = True).
     """
@@ -89,7 +89,10 @@ class DataLoader(object):
 
         elif normalize == 'zscore':
             self.dataX = (self.dataX - self.dataX.mean(axis=0)) / self.dataX.std(axis=0)
-            
+
+        elif normalize == 'log':
+            self.dataX = np.log(self.dataX)
+
 
     def _check_categorical(self, DF):
         cols = DF.columns[:-1] # last one is ALWAYS the output variable
