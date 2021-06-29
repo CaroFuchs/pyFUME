@@ -122,7 +122,9 @@ class BuildTSFIS(object):
                 if kwargs['feature_selection'] == 'wrapper':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso':
-                    self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                    self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter'])
+                elif kwargs['feature_selection'] == 'filter':
+                    self.selected_feature_indices, self.variable_names = fs.filter()
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 self.x_test = self.x_test[:, self.selected_feature_indices]
                 
@@ -252,7 +254,9 @@ class BuildTSFIS(object):
                     if kwargs['feature_selection'] == 'wrapper':
                         self.selected_feature_indices, self.selected_variable_names=fs.wrapper(feature_selection_stop=0.05)
                     elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso':
-                        self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                        self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter'])
+                    elif kwargs['feature_selection'] == 'filter':
+                        self.selected_feature_indices, self.selected_variable_names = fs.filter()
                     
                     self.x_train = self.x_train[:, self.selected_feature_indices]
                     self.x_test = self.x_test[:, self.selected_feature_indices]
@@ -348,7 +352,9 @@ class BuildTSFIS(object):
                 if kwargs['feature_selection'] == 'wrapper':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso':
-                    self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                    self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter'])
+                elif kwargs['feature_selection'] == 'filter':
+                    self.selected_feature_indices, self.variable_names = fs.filter()
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 
             elif kwargs['feature_selection'] == None:
