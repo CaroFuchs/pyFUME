@@ -176,9 +176,57 @@ class FeatureSelector(object):
             
         return selected_features, varnams, optimal_number_clusters
 
-#    def fun(self, particle):
-#        return sum(particle)
-    
+    @staticmethod
+    def transpose(arr: list) -> list:
+        return [[arr[j][i] for j, _ in enumerate(arr)] for i, _ in enumerate(arr[0])]
+
+    def filter(self, min_corr=0.2, max_corr=1.0, max_pvalue=0.05):
+        """
+            Performs feature selection using the Pearson correlation filter method.
+            Filters on both p value and Pearson correlation.
+
+            Args:
+                min_corr: Minimum correlation value for feature to be selected.
+                max_corr: Maximum correlation value for feature to be selected.
+                max_pvalue: Maximum p-value to determine statistical significance.
+
+            Returns:
+                Tuple containing (selected_feature_indices, selected_feature_names)
+                    - selected_feature_indices: The indices of the selected features.
+                    - selected_feature_names: The names of the selected features.
+
+        """
+        from scipy.stats import pearsonr
+
+        transposed_matrix = FeatureSelector.transpose(self.dataX)
+
+        pearson_corr_list = [[pearsonr(transposed_matrix[inx], self.dataY), (inx, self.variable_names[inx])]
+                             for inx, _ in enumerate(transposed_matrix)]
+
+        for corr in pearson_corr_list.copy():
+            if abs(corr[0][1]) > max_pvalue or abs(corr[0][0]) < min_corr or abs(corr[0][0]) > max_corr:
+                pearson_corr_list.remove(corr)
+
+        selected_features = [selected_feature[1][0] for selected_feature in pearson_corr_list]
+        selected_feature_names = [selected_feature[1][1] for selected_feature in pearson_corr_list]
+
+        # Calculate the performance of the selected features. Alike the wrapper method.
+        ds = DataSplitter()
+        x_feat, y_feat, x_val, y_val = ds.holdout(self.dataX, self.dataY)
+
+        feat = x_feat[:, selected_features]
+        x_validation = x_val[:, selected_features]
+
+        performance = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val,
+                                                 nr_clus=self.nr_clus, var_names=selected_feature_names,
+                                                 model_order=self.model_order,
+                                                 performance_metric=self.performance_metric)
+
+        print('The selected features have a', self.performance_metric, 'of:', performance)
+        print('The following features were selected:', selected_feature_names)
+
+        return selected_features, selected_feature_names
+
     def _function(self, particle, arguments, verbose=True, **kwargs):
         from itertools import compress 
         if self.nr_clus == None:
