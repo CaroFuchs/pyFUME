@@ -96,7 +96,18 @@ class DataLoader(object):
         num_cols = DF._get_numeric_data().columns
         categ_cols = list( set(cols)-set(num_cols))
         return categ_cols
-
+    
+    def get_input_data(self):
+        return self.dataX
+    
+    def get_target_data(self):
+        return self.dataY
+    
+    def get_variable_names(self):
+        return self.variable_names
+    
+    def get_normalization_values(self):
+        return self.normalization_values
 
 
 if __name__ == "__main__":
