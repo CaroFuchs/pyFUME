@@ -33,7 +33,7 @@ class pyFUME(object):
     def __init__(self, datapath=None, dataframe=None, nr_clus=2, process_categorical=False, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., **kwargs):
 
         if datapath is None and dataframe is None:
-            raise Exception("Please specify a valid dataset.")
+            raise Exception("ERROR: a dataset was not specified. Please either use the datapath or dataframe arguments.")
 
          #if nr_clus<2 and nr_clus!=None:
          #    raise Exception("Number of clusters should be greater than 1.")
@@ -99,6 +99,7 @@ class pyFUME(object):
             Prediction labels.
         """
         #get the prediction for the test data set
+        print(self.FIS.x_test)
         test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, variable_names=self.FIS.variable_names, golden_standard=self.FIS.y_test)
         pred, _ = test.predict()
         return pred

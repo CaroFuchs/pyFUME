@@ -33,7 +33,7 @@ class ConsequentEstimator(object):
             fs=self.firing_strengths[:,clus]
             fs = np.fmax(fs, np.finfo(np.float64).eps)        # avoid 0's in the matrix
             normalized_weights=fs/fs.sum(0)
-            s=np.multiply(normalized_weights, self.y_train)
+            s=np.multiply(normalized_weights, self.y_train) 
             p[clus]=sum(s)
         return p
             

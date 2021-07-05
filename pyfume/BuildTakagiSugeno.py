@@ -28,7 +28,7 @@ class BuildTSFIS(object):
         Returns:
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
-    def __init__(self, datapath=None, dataframe=None, nr_clus=2, variable_names=None, 
+    def __init__(self, datapath=None, dataframe=None, nr_clus=None, variable_names=None, 
             process_categorical=False, merge_threshold=1.0, **kwargs):
 
         self.datapath = datapath
@@ -68,6 +68,11 @@ class BuildTSFIS(object):
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
         if 'verbose' not in kwargs.keys(): kwargs['verbose'] = True
         if 'cv_randomID' not in kwargs.keys(): kwargs['cv_randomID'] = False
+
+        if self.nr_clus==None and kwargs['feature_selection'] == None:
+            print('Error: please set pyFUME`s argument "nr_clus".')
+            import sys
+            sys.exit()
           
 
         # Load the data
@@ -75,26 +80,30 @@ class BuildTSFIS(object):
             dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         else:
             dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
-        self.variable_names=dl.variable_names
+        self.variable_names=dl.get_variable_names()
         
         if kwargs['normalize'] == True:
-            self.normalization_values=list(dl.normalization_values)
+            self.normalization_values=list(dl.get_normalization_values())
             self.norm_flag=True
         else:
             self.norm_flag = False
             
+        self.dataX=dl.get_input_data()
+        self.dataY=dl.get_target_data()
+        
+            
         # Create a DataSplitter object
         ds = DataSplitter()
-        
+
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
            
             if verbose: print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
-            self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dataX=dl.dataX, dataY=dl.dataY, percentage_training=kwargs['percentage_training'])
+            self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dataX=self.dataX, dataY=self.dataY, percentage_training=kwargs['percentage_training'])
             # Check if there are any missing variables and impute them
-            if np.isnan(dl.dataX).any()== True:
+            if np.isnan(self.dataX).any()== True:
                 try:
                     from sklearn.impute import KNNImputer
                 except ImportError:
@@ -111,7 +120,7 @@ class BuildTSFIS(object):
                 self.x_train, self.y_train = sample.oversample()
                     
             # Perform feature selection if requested
-            if kwargs['feature_selection'] != None:
+            if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
                 if 'feature_selection_performance_metric' not in kwargs.keys(): kwargs['feature_selection_performance_metric'] = 'MAE'
                 fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'], verbose=kwargs['verbose'])
                 
@@ -119,9 +128,9 @@ class BuildTSFIS(object):
                 self.x_train_before_fs=self.x_train.copy()
                 self.x_test_before_fs=self.x_test.copy()
                             
-                if kwargs['feature_selection'] == 'wrapper':
+                if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
-                elif kwargs['feature_selection'] == 'fst-pso':
+                elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                     self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 self.x_test = self.x_test[:, self.selected_feature_indices]
@@ -179,12 +188,12 @@ class BuildTSFIS(object):
     
             self.model = simpbuilder.simpfulmodel
             
-        elif kwargs['data_split_method']=='cross_validation' or kwargs['data_split_method']=='k-fold_cross_validation' or kwargs['data_split_method']=='crossvalidation' or kwargs['data_split_method']=='cv':
+        elif kwargs['data_split_method']=='cross_validation' or kwargs['data_split_method']=='k-fold_cross_validation' or kwargs['data_split_method']=='crossvalidation' or kwargs['data_split_method']=='cv' or kwargs['data_split_method']=='kfold':
             if 'number_of_folds' not in kwargs.keys(): kwargs['number_of_folds'] = 10
             if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
             
             #Create lists with test indices for each fold.
-            self.fold_indices = ds.kfold(data_length=len(dl.dataX), number_of_folds=kwargs['number_of_folds'])
+            self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
             
             # import indices from external file
             # import pickle
@@ -223,12 +232,12 @@ class BuildTSFIS(object):
                 trn_idx = trn_idx[~np.isnan(trn_idx)]
                 trn_idx = [int(x) for x in trn_idx]
 
-                self.x_train = np.array([dl.dataX[i,:] for i in trn_idx])
-                self.x_test = np.array([dl.dataX[i,:] for i in tst_idx])                      
-                self.y_train = np.array([dl.dataY[i] for i in trn_idx])
-                self.y_test = np.array([dl.dataY[i] for i in tst_idx]) 
+                self.x_train = np.array([self.dataX[i,:] for i in trn_idx])
+                self.x_test = np.array([self.dataX[i,:] for i in tst_idx])                      
+                self.y_train = np.array([self.dataY[i] for i in trn_idx])
+                self.y_test = np.array([self.dataY[i] for i in tst_idx]) 
                 
-                if np.isnan(dl.dataX).any()== True:
+                if np.isnan(self.dataX).any()== True:
                     try:
                         from sklearn.impute import KNNImputer
                     except ImportError:
@@ -244,14 +253,14 @@ class BuildTSFIS(object):
                     self.x_train, self.y_train = sample.oversample()
             
                 # Perform feature selection if requested
-                if kwargs['feature_selection'] != None:
+                if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
                     fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, verbose=kwargs['verbose'])
                     self.x_train_before_fs=self.x_train.copy()
                     self.x_test_before_fs=self.x_test.copy()
                     
-                    if kwargs['feature_selection'] == 'wrapper':
+                    if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                         self.selected_feature_indices, self.selected_variable_names=fs.wrapper(feature_selection_stop=0.05)
-                    elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso':
+                    elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                         self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                     
                     self.x_train = self.x_train[:, self.selected_feature_indices]
@@ -319,10 +328,10 @@ class BuildTSFIS(object):
         elif kwargs['data_split_method'] == 'no_split':
             if verbose: print('No test data will be split off, all data will be used for training.')
             
-            self.x_train = dl.dataX.copy()
-            self.y_train = dl.dataY.copy()
+            self.x_train = self.dataX.copy()
+            self.y_train = self.dataY.copy()
             
-            if np.isnan(dl.dataX).any()== True:
+            if np.isnan(self.dataX).any()== True:
                 try:
                     from sklearn.impute import KNNImputer
                 except ImportError:
@@ -338,16 +347,16 @@ class BuildTSFIS(object):
                 self.x_train, self.y_train = sample.oversample()
                     
             # Perform feature selection if requested
-            if kwargs['feature_selection'] != None:
+            if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
                 if 'feature_selection_performance_metric' not in kwargs.keys(): kwargs['feature_selection_performance_metric'] = 'MAE'
                 fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'], verbose=kwargs['verbose'])
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()
                             
-                if kwargs['feature_selection'] == 'wrapper':
+                if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
-                elif kwargs['feature_selection'] == 'fst-pso':
+                elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                     self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 
