@@ -41,6 +41,7 @@ class BuildTSFIS(object):
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
         if 'normalize' not in kwargs.keys(): kwargs['normalize'] = False 
+        if 'imputation' not in kwargs.keys(): kwargs['imputation'] = 'knn' # new
         if 'percentage_training' not in kwargs.keys(): kwargs['percentage_training'] = 0.75
         if 'oversampling' not in kwargs.keys(): kwargs['oversampling'] = False
         if kwargs['oversampling'] == True:
