@@ -191,10 +191,11 @@ class BuildTSFIS(object):
         elif kwargs['data_split_method']=='cross_validation' or kwargs['data_split_method']=='k-fold_cross_validation' or kwargs['data_split_method']=='crossvalidation' or kwargs['data_split_method']=='cv' or kwargs['data_split_method']=='kfold':
             if 'number_of_folds' not in kwargs.keys(): kwargs['number_of_folds'] = 10
             if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
-            
+            if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+
             #Create lists with test indices for each fold.
             self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
-            
+            self.performance_metric = kwargs['performance_metric']
             # import indices from external file
             # import pickle
             # import pandas as pd
@@ -219,7 +220,7 @@ class BuildTSFIS(object):
             os.mkdir(self.folder_name)
             os.chdir('./' + self.folder_name)
             
-            self.MAE_per_fold=[np.inf]*kwargs['number_of_folds']
+            self.performance_metric_per_fold=[np.inf]*kwargs['number_of_folds']
             
             
             for fold_number in range(0, kwargs['number_of_folds']):
@@ -319,11 +320,11 @@ class BuildTSFIS(object):
                 pickle.dump(self, open(filename, 'wb'))
                 
                 tester=SugenoFISTester(model=self.model, test_data=self.x_test, variable_names=self.selected_variable_names, golden_standard=self.y_test)
-                self.MAE_per_fold[fold_number]=tester.calculate_MAE()
+                self.performance_metric_per_fold[fold_number]=tester.calculate_performance(metric=self.performance_metric)
                 
             # set working directory back to where script is stored
             os.chdir(owd)
-            print('The average MAE over ' + str(kwargs['number_of_folds']) +' folds is ', str(np.mean(self.MAE_per_fold)) +' (with st. dev. ' + str(np.std(self.MAE_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.MAE_per_fold)) + ' with MAE = ' + str(np.min(self.MAE_per_fold)) + '.')
+            print('The average ' + self.performance_metric + ' over ' + str(kwargs['number_of_folds']) +' folds is ' + str(np.mean(self.performance_metric_per_fold)) +' (with st. dev. ' + str(np.std(self.performance_metric_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.performance_metric_per_fold)) + ' with ' + self.performance_metric +  ' = ' + str(np.min(self.performance_metric_per_fold)) + '.')
                 
         elif kwargs['data_split_method'] == 'no_split':
             if verbose: print('No test data will be split off, all data will be used for training.')

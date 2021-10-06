@@ -41,7 +41,7 @@ class FeatureSelector(object):
 
         """
             
-        # Create a training and valiadation set for the feature selection phase
+        # Create a training and validation set for the feature selection phase
         ds = DataSplitter()
         x_feat, y_feat, x_val, y_val = ds.holdout(self.dataX, self.dataY)
         

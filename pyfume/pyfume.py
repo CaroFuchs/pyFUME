@@ -167,9 +167,18 @@ class pyFUME(object):
         Returns a list with the performances of each model that is created if crossvalidation is used when training..
 
         Returns:
-            Perfomance of each cross validation model..
+            Perfomance of each cross validation model.
         """
         return FIS.FIS.MAE_per_fold
+    
+    def get_fold_indices():
+        """
+        Returns a list with the fold indices of each model that is created if crossvalidation is used when training..
+
+        Returns:
+            Perfomance of each cross validation model.
+        """
+        return FIS.fold_indices
         
     def _get_RMSE(self):
         # Calculate the mean squared error of the model using the test data set

@@ -102,6 +102,8 @@ class DataLoader(object):
     
     def get_target_data(self):
         return self.dataY
+    def get_all_data(self):
+        return self.data
     
     def get_variable_names(self):
         return self.variable_names
