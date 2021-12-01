@@ -122,8 +122,8 @@ class BuildTSFIS(object):
                     
             # Perform feature selection if requested
             if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
-                if 'feature_selection_performance_metric' not in kwargs.keys(): kwargs['feature_selection_performance_metric'] = 'MAE'
-                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'], verbose=kwargs['verbose'])
+                if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=kwargs['verbose'])
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()
@@ -256,7 +256,7 @@ class BuildTSFIS(object):
             
                 # Perform feature selection if requested
                 if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
-                    fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, verbose=kwargs['verbose'])
+                    fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=kwargs['verbose'])
                     self.x_train_before_fs=self.x_train.copy()
                     self.x_test_before_fs=self.x_test.copy()
                     
@@ -350,8 +350,8 @@ class BuildTSFIS(object):
                     
             # Perform feature selection if requested
             if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
-                if 'feature_selection_performance_metric' not in kwargs.keys(): kwargs['feature_selection_performance_metric'] = 'MAE'
-                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['feature_selection_performance_metric'], verbose=kwargs['verbose'])
+                if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=kwargs['verbose'])
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()

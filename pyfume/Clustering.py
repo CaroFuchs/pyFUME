@@ -21,16 +21,18 @@ class Clusterer(object):
             data: The data to be clustered (default = None).
     """ 
     
-    def __init__(self, nr_clus, x_train=None, y_train=None, data=None, verbose=False):
+    def __init__(self, nr_clus, x_train=None, y_train=None, data=None, relational_data=None, verbose=False):
         self.x_train=x_train
         self.y_train=y_train
         self.nr_clus = nr_clus
         self._verbose = verbose
 
-        if data is None and (x_train is None or y_train is None):
+        if data is None and (x_train is None or y_train is None) and relational_data is None:
             raise Exception("Please specify a valid dataset for clustering.")
         elif data is not None:
         	self.data=data
+        elif relational_data is not None:
+            self.relational_data=relational_data
         else:
             self.data=np.concatenate((self.x_train, np.expand_dims(self.y_train, axis=1)), axis=1)#.reshape(len(self.y_train),1)),axis=1)
 
@@ -57,6 +59,12 @@ class Clusterer(object):
             self.m = kwargs["m"]
         except:
             self.m = 2
+            
+        if method == "fcm" or method == 'gk' or method == 'GK' or method == 'Gustafson-Kessel' or method == 'gustafson-kessel' or method == 'g-k' or method == "pfcm" or method == "fst-pso" or method == "fstpso":
+            assert self.data is not None or (self.x_train is not None and self.y_train is not None), 'Please specify the data tobe clustered.'
+        elif method == 'RFCM' or method == "relational_clustering" or method == "relational" or method == "RC":
+            assert self.relational_data is not None, 'Please specify the relational data matrix.'
+            
 
         if method == "fcm":
             try:
@@ -67,17 +75,14 @@ class Clusterer(object):
                 error = kwargs["fcm_error"]
             except:
                 error = 0.005
-#            try:
-#                seed = kwargs["seed"]
-#            except:
-#                seed = None
+
             centers, partition_matrix, jm = self._fcm(data=self.data, n_clusters=self.nr_clus, m=self.m, max_iter=max_iter, error=error)
         
         elif method == 'gk' or method == 'GK' or method == 'Gustafson-Kessel' or method == 'gustafson-kessel' or method == 'g-k':
             try:
                 max_iter = kwargs["gk_max_iter"]
             except:
-                max_iter=100
+                max_iter=1000
             try:
                 error = kwargs["gk_error"]
             except:
@@ -126,7 +131,23 @@ class Clusterer(object):
             except:
                 path_sol_dump = None
             centers, partition_matrix, jm = self._fstpso(data=self.data, n_clusters=self.nr_clus, max_iter=max_iter, n_particles=n_particles, m=self.m, path_fit_dump=path_fit_dump, path_sol_dump=path_sol_dump)
-
+               
+        elif method == 'RFCM' or method == 'rfcm' or method == "relational_clustering" or method == "relational" or method == "RC":
+            try:
+                max_iter = kwargs["RFCM_max_iter"]
+            except:
+                max_iter=1000
+            try:
+                error = kwargs["RFCM_error"]
+            except:
+                error = 0.005
+            try:
+                error = kwargs["RFCM_initialization"]
+            except:
+                initialization = 'random_initialization'
+            
+            centers, partition_matrix, jm = self._rfcm(R=self.relational_data, c=self.nr_clus, m = self.m, epsilon = error, maxIter = max_iter, initType = initialization)            
+            
         return centers, partition_matrix, jm
 
     def _fcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005):
@@ -318,6 +339,8 @@ class Clusterer(object):
         T = 1/(1+tmpt)
 
         return U, T, centers, jm, g
+    
+    ### Gustafson-Kessel
 
     def _gk(self, m=2, max_iter=100, error=0.01):
         
@@ -384,4 +407,91 @@ class Clusterer(object):
         new_u = 1 / new_u.sum(1)
         new_u = new_u.transpose()
         return new_u
+    
+    ### Relational Clustering
+    
+    def _RF_init_centers(self, number_of_clusters, number_of_data_points, relational_data, method='random_initialization'):
+        # Initialize the cluster cenetrs for  relational fuzzy clustering
+        if method == 'random_initialization':       # Use random numbers
+            V = np.random.rand(number_of_clusters,number_of_data_points)
+            V = V/V.sum(axis=1, keepdims=True)
+        elif method == 'randomly_choose_c_rows':    # Use randomly selected data points as initial centers
+            idx = np.random.choice(number_of_data_points,  size=number_of_clusters, replace=False)
+            V = relational_data[idx,:]
+            V = V/V.sum(axis=1, keepdims=True)
+       
+        return V
+
+
+    def _rfcm(self, R, c, m = 2, epsilon = 0.0001, maxIter = 100, initType = 'random_initialization'):
+     
+        #   Relational Fuzzy c-Means (RFCM) for clustering dissimilarity data as
+        #	proposed in [1]. RFCM is the relational dual of Fuzzy c-Means (FCM), 
+        #	so it expects the input relational matrix R to be Euclidean. 
+        #
+        # Output:
+        #               U: fuzzy partition matrix / membership matrix
+        #               V: cluster centers/coefficients
+        #
+        # Input:
+        # R         - the relational (dissimilarity) data matrix of size n x n
+        # c         - number of clusters to be identified
+        # m         - fuzzifier, default 2
+        # epsilon   - convergence criteria, default 0.0001
+        # initType  - initialize relational cluster centers V, default random initialization
+        #               random initialization
+        #               randomly choose c rows from D
+        # maxIter   - the maximum number fo iterations, default 100
+        #
+        # Refs:
+        #   [1] Hathaway, R. J., Davenport, J. W., & Bezdek, J. C. (1989). Relational duals 
+        #   of the c-means clustering algorithms. Pattern recognition, 22(2), 205-212. 
+               
+        # Initialize variables
+        D = np.array(R)         # Relational data
+        n=len(D)                # Number of data points
+        d = np.zeros([c,n])
+        numIter=0
+        stepSize=epsilon
+        
+        # Initialize the membership matrix randomly
+        U = np.random.rand(c, n)
+        U = np.fmax(U, np.finfo(np.float64).eps)
+        
+        # Initialize the (relational) cluster centers
+        V = self._RF_init_centers(number_of_clusters = c, number_of_data_points = n, relational_data = D, method=initType);
+        
+        # Begin the main loop:
+        while numIter<maxIter and stepSize >= epsilon:
+            U0 = U;
+            
+            # Compute the relational distances d between clusters centers V and data points D
+            d=np.zeros([c,n])
+            for i in range(0,c):
+                Vi=V[i,:]
+                tmp1 = D@Vi.T
+                tmp2 = Vi@D@Vi.T/2
+                d[i,:]= tmp1 - tmp2
+                
+            
+            # Update the partition matrix U
+            d = np.power(d,1/(m-1))
+            tmp1 = np.divide(1,d)
+            tmp2 = np.ones([c,1])*sum(tmp1)
+            U = np.divide(np.divide(1,d),tmp2)
+            
+            # Update cluster centers V
+            V = np.power(U,m)  
+            V = V/V.sum(axis=1, keepdims=True)
+            
+            jm = (U * d ** 2).sum()
+            
+            # Update the step size
+            stepSize=np.amax(abs(U-U0))
+            
+            numIter = numIter + 1;
+        
+        # Return the cluster center location, the membership matrix and the fitness value
+        return V, U, jm
+        
 
