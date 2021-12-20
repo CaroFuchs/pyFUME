@@ -136,7 +136,7 @@ class Clusterer(object):
             try:
                 max_iter = kwargs["RFCM_max_iter"]
             except:
-                max_iter=1000
+                max_iter=100
             try:
                 error = kwargs["RFCM_error"]
             except:
@@ -342,7 +342,7 @@ class Clusterer(object):
     
     ### Gustafson-Kessel
 
-    def _gk(self, m=2, max_iter=100, error=0.01):
+    def _gk(self, m=2, max_iter=1000, error=0.01):
         
         # Initialize the partition matrix
         u = np.random.dirichlet(np.ones(self.data.shape[0]), size=self.nr_clus)
@@ -423,7 +423,7 @@ class Clusterer(object):
         return V
 
 
-    def _rfcm(self, R, c, m = 2, epsilon = 0.0001, maxIter = 100, initType = 'random_initialization'):
+    def _rfcm(self, R, c, m = 2, epsilon = 0.0001, maxIter = 1000, initType = 'random_initialization'):
      
         #   Relational Fuzzy c-Means (RFCM) for clustering dissimilarity data as
         #	proposed in [1]. RFCM is the relational dual of Fuzzy c-Means (FCM), 
@@ -432,6 +432,7 @@ class Clusterer(object):
         # Output:
         #               U: fuzzy partition matrix / membership matrix
         #               V: cluster centers/coefficients
+        #               jm: Fitness function of the best solution
         #
         # Input:
         # R         - the relational (dissimilarity) data matrix of size n x n
@@ -484,6 +485,7 @@ class Clusterer(object):
             V = np.power(U,m)  
             V = V/V.sum(axis=1, keepdims=True)
             
+            # Calculate the fitness value
             jm = (U * d ** 2).sum()
             
             # Update the step size
