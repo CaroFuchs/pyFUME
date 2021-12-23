@@ -492,7 +492,7 @@ class Clusterer(object):
             stepSize=np.amax(abs(U-U0))
 
             if self._verbose == True:
-                print('pyFUME just finished iteration'+ numIter + ' of the RFCM clustering algoritm. The (maximum) difference between the previous and the newly computed partition matrix is' + stepSize + '.')
+                print('pyFUME just finished iteration'+ str(numIter) + ' of the RFCM clustering algoritm. The (maximum) difference between the previous and the newly computed partition matrix is' + str(stepSize) + '.')
             
             numIter = numIter + 1;
         
