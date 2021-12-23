@@ -423,7 +423,7 @@ class Clusterer(object):
         return V
 
 
-    def _rfcm(self, R, c, m = 2, epsilon = 0.0001, maxIter = 1000, initType = 'random_initialization'):
+    def _rfcm(self, R, c, m = 2, epsilon = 0.005, maxIter = 1000, initType = 'random_initialization'):
      
         #   Relational Fuzzy c-Means (RFCM) for clustering dissimilarity data as
         #	proposed in [1]. RFCM is the relational dual of Fuzzy c-Means (FCM), 
@@ -490,6 +490,9 @@ class Clusterer(object):
             
             # Update the step size
             stepSize=np.amax(abs(U-U0))
+
+            if self._verbose == True:
+                print('pyFUME just finished iteration'+ numIter + ' of the RFCM clustering algoritm. The (maximum) difference between the previous and the newly computed partition matrix is' + stepSize + '.')
             
             numIter = numIter + 1;
         
