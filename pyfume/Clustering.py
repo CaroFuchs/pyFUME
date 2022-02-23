@@ -480,6 +480,7 @@ class Clusterer(object):
             tmp1 = np.divide(1,d)
             tmp2 = np.ones([c,1])*sum(tmp1)
             U = np.divide(np.divide(1,d),tmp2)
+            print(U)
             
             # Update cluster centers V
             V = np.power(U,m)  
@@ -492,7 +493,7 @@ class Clusterer(object):
             stepSize=np.amax(abs(U-U0))
 
             if self._verbose == True:
-                print('pyFUME just finished iteration'+ str(numIter) + ' of the RFCM clustering algoritm. The (maximum) difference between the previous and the newly computed partition matrix is' + str(stepSize) + '.')
+                print('pyFUME just finished iteration '+ str(numIter) + ' of the RFCM clustering algoritm. The (maximum) difference between the previous and the newly computed partition matrix is' + str(stepSize) + '.')
             
             numIter = numIter + 1;
         

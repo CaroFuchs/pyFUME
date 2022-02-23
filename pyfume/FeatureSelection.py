@@ -60,7 +60,6 @@ class FeatureSelector(object):
             perfs= [np.inf]*np.size(x_feat,axis=1)
             
             for f in [x for x in unselected_features if x != -1]:
-                from itertools import compress 
                 considered_features = selected_features + [f]
                 var_names = [self.variable_names[i] for i in considered_features]
                 feat=x_feat[:,considered_features]
@@ -156,20 +155,20 @@ class FeatureSelector(object):
         FP.set_fitness(self._function, arguments=args)
         
         # solve problem with FST-PSO
-        _, best_performance, best_solution = FP.solve_with_fstpso(max_iter=max_iter)
+        _, self.best_performance, self.best_solution = FP.solve_with_fstpso(max_iter=max_iter,verbose=False)
         
         if self.nr_clus == None:
-            selected_features=best_solution[:-1]
+            selected_features=self.best_solution[:-1]
         else:
-           selected_features=best_solution 
+           selected_features=self.best_solution 
     
         
         # Show best solution with fitness value
         varnams=[i for indx,i in enumerate(self.variable_names) if selected_features[indx]]
-        print('The following features have been selected:', varnams, 'with a', self.performance_metric, 'of', round(best_performance,2))
+        print('The following features have been selected:', varnams, 'with a', self.performance_metric, 'of', round(self.best_performance,2))
         
         if self.nr_clus == None:
-            optimal_number_clusters=best_solution[-1]
+            optimal_number_clusters=self.best_solution[-1]
         else:
             optimal_number_clusters = self.nr_clus
             
@@ -179,7 +178,7 @@ class FeatureSelector(object):
 #    def fun(self, particle):
 #        return sum(particle)
     
-    def _function(self, particle, arguments, verbose=True, **kwargs):
+    def _function(self, particle, arguments, verbose=False, **kwargs):
         from itertools import compress 
         if self.nr_clus == None:
             A = arguments['x_train'][:,particle[:-1]]

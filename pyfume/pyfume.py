@@ -169,7 +169,7 @@ class pyFUME(object):
         Returns:
             Perfomance of each cross validation model.
         """
-        return FIS.FIS.MAE_per_fold
+        return self.FIS.performance_metric_per_fold
     
     def get_fold_indices():
         """
@@ -178,7 +178,7 @@ class pyFUME(object):
         Returns:
             Perfomance of each cross validation model.
         """
-        return FIS.fold_indices
+        return self.FIS.fold_indices
         
     def _get_RMSE(self):
         # Calculate the mean squared error of the model using the test data set
@@ -214,9 +214,8 @@ class pyFUME(object):
         Returns the test or training data set.
         
         Args:
-            xdata: The input data (as numpy array with each row a different data instance and variables in the same order as in the original training data set) for which the labels should be calculated. 
-            normalize: Boolean that indicates whether the retuned fiing strengths should be normalized (normalize = True) or not (normalize = False), When the firing strenghts are nomalized the summed fiing strengths for each data instance equals one.
-         
+            data_set: Used to specify whether the function should return the training (data_set = "train") or test set (data_set = "test"). By default, the function returns the test set. 
+
         Returns:
             Tuple (x_data, y_data) containing the test or training data set.
         """  
