@@ -27,6 +27,120 @@ class FeatureSelector(object):
         self.model_order=model_order
         self.verbose=verbose
         
+    def log_wrapper(self,**kwargs):
+        """
+            Performs feature selection using the wrapper method while also checking whether .
+            
+            Args:
+                **kwargs: Additional arguments to change settings of the fuzzy model.
+                
+            Returns:
+                Tuple containing (selected_features, selected_feature_names)
+                    - selected_features: The indices of the selected features.
+                    - selected_feature_names: The names of the selected features. 
+
+        """
+            
+        # Create a training and validation set for the feature selection phase
+        ds = DataSplitter()
+        x_feat, y_feat, x_val, y_val = ds.holdout(self.dataX, self.dataY)
+        
+        # Set initial values for the performance
+        old_performance=np.inf
+        new_performance=np.inf
+        perfs=[]
+        
+        # Create a set with the unselected (currently all) and selected (none yet) variables
+        selected_features=[]
+        unselected_features=list(range(0,np.size(x_feat,axis=1)))
+        
+        # Keep a (at this point empty) lists of which variables should be log-transformed
+        logvars = []
+        logvars_num = []
+        temp_logvars_num = []
+        temp_logvars  = []
+        epsilon = 1e-10
+        
+        stop=False
+
+        while stop == False: 
+            perfs= [np.inf]*np.size(x_feat,axis=1)
+            
+            for f in [x for x in unselected_features if x != -1]:
+                considered_features = selected_features + [f]
+                var_names = [self.variable_names[i] for i in considered_features]
+                
+                # Prepare training sets
+                feat=x_feat[:,considered_features]
+                tmp = x_feat.copy()
+                tmp[f] = np.log(tmp[f]+epsilon)
+                log_feat=tmp[:,considered_features]
+
+                
+                # Prepare validation sets 
+                x_validation=x_val[:,considered_features] 
+                tmp=x_val.copy()
+                tmp[f]=np.log(tmp[f]+epsilon)
+                log_x_validation=tmp[:,considered_features] 
+
+
+                if self.verbose==True: 
+                    print('Evaluating feature sub-set including:', var_names)
+                
+                try:
+                    normal_perf = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                    log_perf = self._evaluate_feature_set(x_data=log_feat, y_data=y_feat, x_val=log_x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                    if log_perf < normal_perf: 
+                       temp_logvars.append(var_names[-1])
+                       temp_logvars_num.append(f)
+                       print(" * In this sub-set, the variable(s)", logvars + list([var_names[-1]]), "will be log-transformed.")
+                    elif log_perf > normal_perf and len(logvars)>0:
+                        print(" * In this sub-set, the variable(s)", logvars, "will be log-transformed.")
+
+                    perfs[f] = min(normal_perf, log_perf)
+                except RuntimeError:
+                    raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info.')
+                    import sys
+                    sys.exit(1)
+                    
+            new_performance=min(perfs)
+            new_feature=unselected_features[perfs.index(new_performance)]
+            
+            del perfs
+            
+            if new_performance<old_performance: #*feature_selection_stop:
+                selected_features.append(new_feature)
+                                
+                # Check if the last addded feature should be log-transformed and if so, perform the transformation
+                if new_feature in temp_logvars_num:
+                       logvars.append(self.variable_names[new_feature])
+                       logvars_num.append(new_feature)
+                    
+                       x_feat[new_feature] = np.log(x_feat[new_feature]+epsilon)
+                       x_val[new_feature] = np.log(x_val[new_feature]+epsilon)
+                  
+                unselected_features[new_feature]=-1
+                old_performance=new_performance
+                
+                temp_logvars_num = []
+                temp_logvars  = []
+
+            else:
+                print('***** FEATURE SELECTION ENDED *****')
+                print('The selected features have a', self.performance_metric, 'of:', old_performance)
+                stop = True 
+       
+        # Show the user which variables were selected, and which ones were log-transformed.
+        selected_feature_names = [self.variable_names[i] for i in selected_features]
+        print('The following features were selected:',  selected_feature_names)
+        if len(logvars)>0:
+            print('The following features were log-transformed:', logvars)
+        elif len(logvars)==0:
+            print('None of the selected features was log-transformed.')
+            
+        return selected_features, selected_feature_names, logvars_num, logvars
+
+        
     def wrapper(self,**kwargs):
         """
             Performs feature selection using the wrapper method.

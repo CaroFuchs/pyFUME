@@ -83,11 +83,11 @@ class BuildTSFIS(object):
             dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
         self.variable_names=dl.get_variable_names()
         
-        if kwargs['normalize'] == True:
+        if kwargs['normalize'] != False and kwargs['normalize'] != 'zscore':
             self.normalization_values=list(dl.get_normalization_values())
-            self.norm_flag=True
+            self.minmax_norm_flag=True
         else:
-            self.norm_flag = False
+            self.minmax_norm_flag = False
             
         self.dataX=dl.get_input_data()
         self.dataY=dl.get_target_data()
@@ -104,7 +104,7 @@ class BuildTSFIS(object):
             # and test set (default: 25%).
             self.x_train, self.y_train, self.x_test, self.y_test = ds.holdout(dataX=self.dataX, dataY=self.dataY, percentage_training=kwargs['percentage_training'])
             # Check if there are any missing variables and impute them
-            if np.isnan(self.dataX).any()== True:
+            if np.isnan(self.dataX).any().any()== True:
                 try:
                     from sklearn.impute import KNNImputer
                 except ImportError:
@@ -131,6 +131,8 @@ class BuildTSFIS(object):
                             
                 if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
+                elif kwargs['feature_selection'] == 'logwrapper':
+                    self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                     self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
@@ -138,9 +140,17 @@ class BuildTSFIS(object):
                 
             elif kwargs['feature_selection'] == None:
                 self.selected_variable_names= self.variable_names
-                
-            # Cluster the training data (in input-output space)
-            cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+            
+            # Cluster the data, log-transform when needed.
+            if kwargs['feature_selection'] == 'logwrapper':
+                # Use log transformed variables if needed
+                self.log_x_train = self.x_train.copy()
+                for i in self.log_indices:
+                    self.log_x_train[i]= np.log(self.x_train[i])
+                cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+            else:                
+                # Cluster the training data (in input-output space)
+                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
@@ -239,7 +249,7 @@ class BuildTSFIS(object):
                 self.y_train = np.array([self.dataY[i] for i in trn_idx])
                 self.y_test = np.array([self.dataY[i] for i in tst_idx]) 
                 
-                if np.isnan(self.dataX).any()== True:
+                if np.isnan(self.dataX).any().any()== True:
                     try:
                         from sklearn.impute import KNNImputer
                     except ImportError:
@@ -262,6 +272,8 @@ class BuildTSFIS(object):
                     
                     if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                         self.selected_feature_indices, self.selected_variable_names=fs.wrapper(feature_selection_stop=0.05)
+                    elif kwargs['feature_selection'] == 'logwrapper':
+                        self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                     elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                         self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                     
@@ -270,8 +282,17 @@ class BuildTSFIS(object):
                 elif kwargs['feature_selection'] == None:
                     self.selected_variable_names= self.variable_names                    
                 
-                # Cluster the training data (in input-output space) using FCM
-                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus)
+                # Cluster the data, log-transform when needed.
+                if kwargs['feature_selection'] == 'logwrapper':
+                    # Use log transformed variables if needed
+                    self.log_x_train = self.x_train.copy()
+                    for i in self.log_indices:
+                        self.log_x_train[i]= np.log(self.x_train[i])
+                    cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                else:                
+                    # Cluster the training data (in input-output space)
+                    cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                
                 
                 if kwargs['cluster_method'] == 'fcm':
                     self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
@@ -333,7 +354,7 @@ class BuildTSFIS(object):
             self.x_train = self.dataX.copy()
             self.y_train = self.dataY.copy()
             
-            if np.isnan(self.dataX).any()== True:
+            if np.isnan(self.dataX).any().any()== True:
                 try:
                     from sklearn.impute import KNNImputer
                 except ImportError:
@@ -358,6 +379,8 @@ class BuildTSFIS(object):
                             
                 if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
+                elif kwargs['feature_selection'] == 'logwrapper':
+                    self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                     self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
@@ -365,8 +388,16 @@ class BuildTSFIS(object):
             elif kwargs['feature_selection'] == None:
                 self.selected_variable_names= self.variable_names
                 
-            # Cluster the training data (in input-output space) using FCM
-            cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus)
+            # Cluster the data, log-transform when needed.
+            if kwargs['feature_selection'] == 'logwrapper':
+                # Use log transformed variables if needed
+                self.log_x_train = self.x_train.copy()
+                for i in self.log_indices:
+                    self.log_x_train[i]= np.log(self.x_train[i])
+                cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+            else:                
+                # Cluster the training data (in input-output space)
+                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 

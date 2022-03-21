@@ -99,7 +99,6 @@ class pyFUME(object):
             Prediction labels.
         """
         #get the prediction for the test data set
-        print(self.FIS.x_test)
         test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, variable_names=self.FIS.variable_names, golden_standard=self.FIS.y_test)
         pred, _ = test.predict()
         return pred
@@ -125,6 +124,52 @@ class pyFUME(object):
         test = SugenoFISTester(model=model, test_data=xdata, golden_standard=None, variable_names=self.FIS.variable_names)
         pred, _ = test.predict()
         return pred
+    
+    def normalize_values(self, data):
+        """
+        Calculates the normalized values of a data point, using the same scaling 
+        that was used to training data of the model. This method only works when 
+        the data was normalized using the min-max method.
+
+        Args:
+            xdata: The input data (as numpy array with each row a different data instance and variables in the same order as in the original training data set) for which the normalized values should be calculated. 
+
+        Returns:
+            Normalized values.
+        """        
+        if self.FIS.minmax_norm_flag==True:
+            norm_val=self.FIS.normalization_values
+            variable_names, min_values, max_values = zip(*norm_val)
+            normalized_data = (data - np.array(min_values)) / (np.array(max_values) - np.array(min_values)) 
+           
+        elif self.FIS.minmax_norm_flag==False:
+            raise Exception('The model was not trained on normalized data, normalization is aborted.')    
+        
+        return normalized_data
+    
+    
+    def denormalize_values(self, data):
+        """
+        Takes normalized data points, and returns the denormalized (raw) values
+        of that data point. This method only works when during modeling the 
+        data was normalized using the min-max method.
+
+        Args:
+            xdata: The input data (as numpy array with each row a different data instance and variables in the same order as in the original training data set) for which the normalized values should be calculated. 
+
+        Returns:
+            Normalized values.
+        """        
+        if self.FIS.minmax_norm_flag==True:
+            if np.amin(data)<0 or np.amax(data) >1:
+                print('WARNING: The given value(s) are not between 0 and 1, the denormalization is performed by extrapolating.')
+            norm_val=self.FIS.normalization_values
+            variable_names, min_values, max_values = zip(*norm_val)
+            denormalized_data = (data * (np.array(max_values) - np.array(min_values))) + np.array(min_values)
+        elif self.FIS.minmax_norm_flag==False:
+            raise Exception('The model was not trained on normalized data, normalization is aborted.')    
+        
+        return denormalized_data
 
     def test_model(self, xdata, ydata, error_metric='MAE'):
         """
@@ -173,7 +218,7 @@ class pyFUME(object):
     
     def get_fold_indices():
         """
-        Returns a list with the fold indices of each model that is created if crossvalidation is used when training..
+        Returns a list with the fold indices of each model that is created if crossvalidation is used when training.
 
         Returns:
             Perfomance of each cross validation model.
@@ -214,7 +259,7 @@ class pyFUME(object):
         Returns the test or training data set.
         
         Args:
-            data_set: Used to specify whether the function should return the training (data_set = "train") or test set (data_set = "test"). By default, the function returns the test set. 
+            data_set: Used to specify whether the function should return the training (data_set = "train"), test set (data_set = "test") or both training and test data (data_set = "all"). By default, the function returns the test set. 
 
         Returns:
             Tuple (x_data, y_data) containing the test or training data set.
@@ -224,8 +269,22 @@ class pyFUME(object):
             return self.FIS.x_train, self.FIS.y_train
         elif data_set == 'test':
             return self.FIS.x_test, self.FIS.y_test
+        elif data_set == 'all':
+            xdata = np.concatenate((self.FIS.x_train, self.FIS.x_test), axis=0)
+            ydata = np.concatenate((self.FIS.y_train, self.FIS.y_test), axis=0)
+            return xdata, ydata
         else:
-            print('Please specify whether you would like to receive the training (data_set = "train") or test set (data_set = "test").')
+            print('Please specify whether you would like to receive the training (data_set = "train"), test set (data_set = "test") or all data (data_set = "all").')
+            
+    def get_cluster_centers(self):
+        """
+        Returns the cluster centers as identified by pyFUME.
+        
+        Returns:
+            cluster centers.
+        """  
+        return self.FIS.cluster_centers 
+        
 
 if __name__=='__main__':
     from numpy.random import seed
