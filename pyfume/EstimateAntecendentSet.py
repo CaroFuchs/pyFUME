@@ -175,7 +175,7 @@ class AntecedentEstimator(object):
         
         # Input:
         # Xin: N x 1 input domain (column vector)
-        # MFin: N x 1correspoding membership values 
+        # MFin: N x 1 corresponding membership values 
         # nc: number of alpha cut values to consider (default=101)
         # norm: optional normalization flag (0: do not normalize, 1 : normalize, 
         # default=1)
@@ -207,6 +207,17 @@ class AntecedentEstimator(object):
                 mf[i]=acut[i]
                 mf[i+nc]=acut[i]
                 
+        # # Determine the elements in the alpha cuts    
+        # for i in range(0,nc):
+        #     tmp1 = mfin>acut[i]
+        #     if len(tmp1)==0:
+        #         tmp=xin[tmp1]
+        #         np.sort(tmp)
+        #         x[i]=tmp[0]
+        #         x[i+nc]=tmp[-1]
+        #         mf[i]=acut[i]
+        #         mf[i+nc]=acut[i]
+                  
         #Delete NaNs
         idx=np.isnan(x)
         x=x[idx==False]

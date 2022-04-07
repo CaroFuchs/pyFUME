@@ -88,6 +88,7 @@ class BuildTSFIS(object):
             self.minmax_norm_flag=True
         else:
             self.minmax_norm_flag = False
+            self.normalization_values =  None
             
         self.dataX=dl.get_input_data()
         self.dataY=dl.get_target_data()
@@ -190,7 +191,8 @@ class BuildTSFIS(object):
             simpbuilder = SugenoFISBuilder(
                 self.antecedent_parameters, 
                 self.consequent_parameters, 
-                self.variable_names, 
+                self.selected_variable_names, 
+                normalization_values = self.normalization_values,
                 extreme_values = self._antecedent_estimator._extreme_values,
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 
@@ -328,6 +330,7 @@ class BuildTSFIS(object):
                     self.antecedent_parameters, 
                     self.consequent_parameters, 
                     self.selected_variable_names, 
+                    normalization_values = self.normalization_values, 
                     extreme_values = self._antecedent_estimator._extreme_values,
                     operators=kwargs["operators"], 
                     save_simpful_code='Fold_' + str(fold_number) +'_Simpful_code.py', 
@@ -436,7 +439,8 @@ class BuildTSFIS(object):
             simpbuilder = SugenoFISBuilder(
                 self.antecedent_parameters, 
                 self.consequent_parameters, 
-                self.variable_names, 
+                self.selected_variable_names,  
+                normalization_values = self.normalization_values,
                 extreme_values = self._antecedent_estimator._extreme_values,
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 

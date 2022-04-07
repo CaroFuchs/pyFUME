@@ -54,19 +54,6 @@ class pyFUME(object):
         else:
             raise Exception ("This modeling technique has not yet been implemented.")
 
-    def get_model(self):
-        """
-        Returns the fuzzy model created by pyFUME.
-
-        Returns:
-            The fuzzy model (as an executable object).
-        """          
-        if self.FIS.model is None:
-            print ("ERROR: model was not created correctly, aborting.")
-            exit(-1)
-        else:
-            return self.FIS.model
-
     def calculate_error(self, method="MAE"):
         """
         Calculates the performance of the model given the test data.
@@ -114,7 +101,7 @@ class pyFUME(object):
             Prediction labels.
         """
         # Normalize the input data if needed
-        if self.FIS.norm_flag==True:
+        if self.FIS.minmax_norm_flag==True:
             norm_val=self.FIS.normalization_values
             variable_names, min_values, max_values = zip(*norm_val)
             xdata = (xdata - np.array(min_values)) / (np.array(max_values) - np.array(min_values))
@@ -189,6 +176,23 @@ class pyFUME(object):
         metric= test.calculate_performance(metric=error_metric)
         return metric
 
+    #######################
+    ###     GETTERS     ###
+    #######################
+
+    def get_model(self):
+        """
+        Returns the fuzzy model created by pyFUME.
+
+        Returns:
+            The fuzzy model (as an executable object).
+        """          
+        if self.FIS.model is None:
+            print ("ERROR: model was not created correctly, aborting.")
+            exit(-1)
+        else:
+            return self.FIS.model
+        
     def get_firing_strengths(self, data, normalize=True):
         """
         Calculates the (normalized) firing strength/ activition level of each rule for each data instance of the given data.
@@ -212,16 +216,16 @@ class pyFUME(object):
         Returns a list with the performances of each model that is created if crossvalidation is used when training..
 
         Returns:
-            Perfomance of each cross validation model.
+            Perfomance of each cross-validation model.
         """
         return self.FIS.performance_metric_per_fold
     
-    def get_fold_indices():
+    def get_fold_indices(self):
         """
         Returns a list with the fold indices of each model that is created if crossvalidation is used when training.
 
         Returns:
-            Perfomance of each cross validation model.
+            Fold indices.
         """
         return self.FIS.fold_indices
         
@@ -284,7 +288,181 @@ class pyFUME(object):
             cluster centers.
         """  
         return self.FIS.cluster_centers 
+    
+    
+    #######################
+    ### PLOT FACILITIES ###
+    #######################
+
+    def plot_mf(self, variable_name, output_file='', highlight_element=None, highlight_mf=None, ax = None):
+        """
+        Uses Simpful's plotting facilities to plot the membership functions of
+        the pyFUME model.
+
+        Args:
+            variable_name: The variable name whose membership functions should be plotted.
+            output_file: Path and filename where the plot must be saved. By default, the file is not saved.
+            highlight_element: Show the memberships of a specific element of the universe of discourse in the figure.
+            highlight_mf: String indicating the linguistic term/fuzzy set to highlight in the plot.
+            ax: The motplotlib ax where the variable will be plotted.
+
+        """ 
+        self.get_model().plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax)
+                
+    def plot_all_mfs(self, output_file='', figures_per_row=4):
+        """
+        Plots the membership functions of all the variables  in the pyFUME model,
+        each in their own sub figure.
+
+        Args:
+            output_file: path and filename where the plot must be saved.
+            figures_per_row: The number of sub figures per row in the figure.
+        """
+        self.get_model().produce_figure(outputfile=output_file, max_figures_per_row=figures_per_row)
+    
+    def plot_consequent_parameters(self, rule_number, output_file=''):
+        """
+        Plots the consequent coeffecients of a given rule in a bar chart. If 
+        the training data was normalized, the coeffiecients are plotted as-is. 
+        If the data was not normalized, the coefficients are normalized to 
+        enhance comparability.
+
+        Args:
+            output_file: path and filename where the plot must be saved.
+            figures_per_row: The number of figures per row.
+        """
+        import matplotlib.pyplot as plt
+
+        # Start counting from 1 instead of 0
+        rule_number=rule_number-1
         
+        # Get the required data from the pyFUME model
+        labels= self.FIS.selected_variable_names
+        consequent_parameters=self.FIS.consequent_parameters
+        nr_rules=len(consequent_parameters)
+        nr_variables = len(labels)
+        
+        # Standardize the parameters if data was not normalized
+        if self.FIS.minmax_norm_flag == False:
+            standard_deviations=np.std(self.FIS.x_train, axis=0)
+            std_y=np.std(self.FIS.y_train)
+            parameters=np.zeros((nr_variables,nr_rules))
+            for rule in range(0,nr_rules):
+                consequent=consequent_parameters[rule]
+                n=np.zeros(nr_variables)
+                for var in range(0,nr_variables):
+                    std=standard_deviations[var]
+                    parameter=consequent[var]
+                    norm= (std/std_y)*parameter
+                    n[var]=norm
+                parameters[:,rule]= n
+                
+        # Used the raw values if data was normalized        
+        elif self.FIS.minmax_norm_flag == True:
+            parameters=np.zeros((nr_variables,nr_rules))
+            for rule in range(0,nr_rules):
+                consequent=consequent_parameters[rule]
+                n=np.zeros(nr_variables)
+                for var in range(0,nr_variables):
+                    n[var]=consequent[var]
+                parameters[:,rule]= n
+        
+        # Color the bars in the plot based on the relationship to the target variable
+        cc=['colors']*len(parameters[:,rule_number])
+        color_labels= ["Negatively related to target variable", "Positively related to target variable"]
+        for n,val in enumerate(parameters[:,rule_number]):
+            if val<0:
+                cc[n]='firebrick'
+            elif val>=0:
+                cc[n]='navy' 
+        
+        # Create the plot
+        fig, ax = plt.subplots(1,1)       
+        h = plt.barh(labels, np.abs(parameters[:,rule_number]), align='center', color = cc)
+        plt.grid(color='grey', linestyle='dotted', linewidth=1.5)
+        plt.gca().invert_yaxis()
+        if self.FIS.minmax_norm_flag == False:
+            fig_title = 'Standardized consequent parameters for rule ' + str(rule_number+1)
+        elif self.FIS.minmax_norm_flag == True:
+            fig_title = 'Consequent parameters for rule ' + str(rule_number+1)    
+        ax.set_title(fig_title)
+        plt.legend(h, color_labels)
+        fig.tight_layout()
+        
+        # Save the plot if requested, otherwise just show the plot to the user
+        if output_file != "":
+            fig.savefig(output_file)
+        else:
+            plt.show()
+
+    def _denormalize_antecedent_set(self, data, normalization_values):
+        """
+        Takes a normalized antecedent set, and returns the denormalized parameters
+        defining that set. This method only works when during modeling the 
+        data was normalized using the min-max method.
+    
+        Args:
+            xdata: The input data (as numpy array with each row a different data instance and variables in the same order as in the original training data set) for which the normalized values should be calculated. 
+    
+        Returns:
+            Normalized values.
+        """        
+    
+        (_, min_value, max_value) = normalization_values
+        tmp = []
+        for x in data[-1]:
+            denormalized_data = (x * (np.array(max_value) - np.array(min_value))) + np.array(min_value)
+            tmp.append(denormalized_data)
+            
+        denormalized_set = tuple([data[0], tmp])
+
+        return denormalized_set
+    
+    def plot_denormalized_mf(self, variable_name, output_file='', highlight_element=None, highlight_mf=None, ax = None):
+        normalization_values = self.FIS.normalization_values 
+        antecedent_sets= self.FIS.antecedent_parameters
+        
+        # Check if variables were removed (during feature selection)
+        to_keep=[]
+        for i in range(0,len(normalization_values)):
+            if normalization_values[i][0] in self.FIS.selected_variable_names:
+                to_keep.append(i)
+        
+        # Keep only the values for variables that were selected
+        normalization_values = [normalization_values[i] for i in to_keep]
+        
+        # Denormalize the antecedent set parameters
+        denormed_antecedent_sets = []
+        for i in range(0, len(antecedent_sets)):
+            if i in range(0,len(self.FIS.selected_variable_names)):
+                norm_vals=normalization_values[i]
+            else:
+                norm_vals=normalization_values[i-len(self.FIS.selected_variable_names)]
+            denormed_set=self._denormalize_antecedent_set(antecedent_sets[i], norm_vals)
+            denormed_antecedent_sets.append(denormed_set)
+        
+        UoD = []
+        _, mi, ma = zip(*self.FIS.normalization_values)
+        for i in range(0,len(mi)):
+            # UoD.append(tuple((mi[i]-0.05*ma[i],ma[i]+0.05*ma[i])))
+            UoD.append(tuple((mi[i],ma[i])))
+
+        
+        simpbuilder = SugenoFISBuilder(
+            denormed_antecedent_sets, 
+            np.tile(1, (self.nr_clus, len(self.FIS.selected_variable_names)+1)), 
+            self.FIS.selected_variable_names, 
+            extreme_values = UoD,
+            save_simpful_code='trial.py', 
+            fuzzy_sets_to_drop=self.FIS._antecedent_estimator._info_for_simplification,
+            verbose = False)
+        dummymodel = simpbuilder.simpfulmodel
+        
+        # Plot the requested variable using Simpful
+        dummymodel.plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax)
+
+        
+
 
 if __name__=='__main__':
     from numpy.random import seed

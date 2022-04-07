@@ -1,4 +1,5 @@
 from .simpfulfier import *
+import sys
 
 class SugenoFISBuilder(object):
     """
@@ -19,10 +20,17 @@ class SugenoFISBuilder(object):
     
     """
     def __init__(self, antecedent_sets, consequent_parameters, 
-        variable_names, model_order = 'first', extreme_values=None, operators=None, 
+        variable_names, normalization_values = None, model_order = 'first', extreme_values=None, operators=None, 
         save_simpful_code=True, fuzzy_sets_to_drop=None, verbose=True):
         #super(SugenoFISBuilder, self).__init__()
         super().__init__()
+        
+        # if normalization_values != None:
+        #     print('variable names:', variable_names)
+        #     print('Antecedent sets:', antecedent_sets)
+        #     print('Consequent parameters:', consequent_parameters)
+        #     print('Normalization values:', normalization_values)
+        #     sys.exit()            
 
        
         self._SC = SimpfulConverter(

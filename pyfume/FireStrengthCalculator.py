@@ -47,12 +47,19 @@ class FireStrengthCalculator(object):
         """
 
         self.data=data
-        # Calculate the firing strengths for each rule for each data point 
-        firing_strengths=[]
         
-        for i in range(0,len(self.data)):
-            for j in range (0,len(self.variable_names)):
-                self.dummymodel.set_variable(self.variable_names[j], self.data[i,j])
-            firing_strengths.append(self.dummymodel.get_firing_strengths())
-        self.firing_strengths=np.array(firing_strengths)
+        # Create a dictionary to pass to Simpful
+        input_dict = {}
+        for i in range(len(self.variable_names)):
+            input_dict[self.variable_names[i]] = self.data[:,i]
+        
+        # Calculate the firing strengths for each rule for each data point         
+        self.firing_strengths = np.array(self.dummymodel.get_firing_strengths(input_values = input_dict))     
+        
+        # firing_strengths=[]
+        # for i in range(0,len(self.data)):
+        #     for j in range (0,len(self.variable_names)):
+        #         self.dummymodel.set_variable(self.variable_names[j], self.data[i,j])
+        #     firing_strengths.append(self.dummymodel.get_firing_strengths())
+        # self.firing_strengths=np.array(firing_strengths)
         return self.firing_strengths

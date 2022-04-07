@@ -59,7 +59,9 @@ class FeatureSelector(object):
         logvars_num = []
         temp_logvars_num = []
         temp_logvars  = []
-        epsilon = 1e-10
+        
+        # Add a very small number before log transforming to avoid 0s in normalized data
+        epsilon = np.finfo(np.float64).eps
         
         stop=False
 
@@ -80,7 +82,7 @@ class FeatureSelector(object):
                 # Prepare validation sets 
                 x_validation=x_val[:,considered_features] 
                 tmp=x_val.copy()
-                tmp[f]=np.log(tmp[f]+epsilon)
+                tmp[f]=np.log(tmp[f]+epsilon)  
                 log_x_validation=tmp[:,considered_features] 
 
 
@@ -414,9 +416,9 @@ class FeatureSelector(object):
             except RuntimeError:
                 raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info')
                 
-                import os
-                import signal
-                os.kill(os.getppid(), signal.SIGTERM)
+                # import os
+                # import signal
+                # os.kill(os.getppid(), signal.SIGTERM)
                 
             performance = np.mean(perf)
             
