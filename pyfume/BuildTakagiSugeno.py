@@ -206,19 +206,20 @@ class BuildTSFIS(object):
             if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
             if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
             if 'save_kfold_models' not in kwargs.keys(): kwargs['save_kfold_models'] = True
+            if 'kfold_indices' not in kwargs.keys(): kwargs['kfold_indices'] = None
 
             #Create lists with test indices for each fold.
-            self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
+            if kwargs['kfold_indices'] == None:
+                self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
+            else:
+                self.fold_indices = kwargs['kfold_indices']
+                
             self.performance_metric = kwargs['performance_metric']
-            # import indices from external file
-            # import pickle
-            # import pandas as pd
-
             #fold_indices=pd.read_csv('./fold_indices.csv', header=None)  
             #self.fold_indices=fold_indices.to_numpy()
                         
             # Create folder to store developed models
-            if "save_kfold_models" == True:
+            if kwargs['save_kfold_models'] == True:
                 import os, datetime, pickle
     
                 if kwargs['cv_randomID'] == True:
@@ -341,7 +342,7 @@ class BuildTSFIS(object):
         
                 self.model = simpbuilder.simpfulmodel
                 
-                if "save_kfold_models" == True:
+                if kwargs['save_kfold_models'] == True:
                     # Save the created model in the dedicated folder
                     filename = 'Fold_' + str(fold_number) + '.pickle'
                     pickle.dump(self, open(filename, 'wb'))
@@ -350,7 +351,7 @@ class BuildTSFIS(object):
                 self.performance_metric_per_fold[fold_number]=tester.calculate_performance(metric=self.performance_metric)
                 
             # set working directory back to where script is stored
-            if "save_kfold_models" == True:
+            if kwargs['save_kfold_models'] == True:
                 os.chdir(owd)
             
             print('The average ' + self.performance_metric + ' over ' + str(kwargs['number_of_folds']) +' folds is ' + str(np.mean(self.performance_metric_per_fold)) +' (with st. dev. ' + str(np.std(self.performance_metric_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.performance_metric_per_fold)) + ' with ' + self.performance_metric +  ' = ' + str(np.min(self.performance_metric_per_fold)) + '.')
