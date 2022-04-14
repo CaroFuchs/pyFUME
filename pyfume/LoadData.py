@@ -85,7 +85,7 @@ class DataLoader(object):
             maxi=np.abs(self.dataX).max(axis=0)
             self.normalization_values=zip(self.variable_names, mini, maxi)
 
-            self.dataX = (self.dataX - self.dataX.min(axis=0) / self.dataX.max(axis=0)-self.dataX.min(axis=0))
+            self.dataX = (self.dataX - self.dataX.min(axis=0)) / (self.dataX.max(axis=0)-self.dataX.min(axis=0))
 
         elif normalize == 'zscore':
             self.dataX = (self.dataX - self.dataX.mean(axis=0)) / self.dataX.std(axis=0)
