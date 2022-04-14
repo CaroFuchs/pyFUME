@@ -294,7 +294,7 @@ class pyFUME(object):
     ### PLOT FACILITIES ###
     #######################
 
-    def plot_mf(self, variable_name, output_file='', highlight_element=None, highlight_mf=None, ax = None):
+    def plot_mf(self, variable_name, output_file='', highlight_element=None, highlight_mf=None, ax = None, xscale = 'linear'):
         """
         Uses Simpful's plotting facilities to plot the membership functions of
         the pyFUME model.
@@ -307,7 +307,7 @@ class pyFUME(object):
             ax: The motplotlib ax where the variable will be plotted.
 
         """ 
-        self.get_model().plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax)
+        self.get_model().plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax, xscale = xscale)
                 
     def plot_all_mfs(self, output_file='', figures_per_row=4):
         """
@@ -418,7 +418,7 @@ class pyFUME(object):
 
         return denormalized_set
     
-    def plot_denormalized_mf(self, variable_name, output_file='', highlight_element=None, highlight_mf=None, ax = None):
+    def plot_denormalized_mf(self, variable_name, output_file='', highlight_element=None, highlight_mf=None, ax = None, xscale = 'linear'):
         normalization_values = self.FIS.normalization_values 
         antecedent_sets= self.FIS.antecedent_parameters
         
@@ -459,7 +459,7 @@ class pyFUME(object):
         dummymodel = simpbuilder.simpfulmodel
         
         # Plot the requested variable using Simpful
-        dummymodel.plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax)
+        dummymodel.plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax, xscale = xscale)
 
         
 
