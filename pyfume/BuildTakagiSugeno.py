@@ -205,6 +205,7 @@ class BuildTSFIS(object):
             if 'number_of_folds' not in kwargs.keys(): kwargs['number_of_folds'] = 10
             if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
             if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+            if 'save_kfold_models' not in kwargs.keys(): kwargs['save_kfold_models'] = 'True'
 
             #Create lists with test indices for each fold.
             self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
@@ -217,23 +218,24 @@ class BuildTSFIS(object):
             #self.fold_indices=fold_indices.to_numpy()
                         
             # Create folder to store developed models
-            import os, datetime, pickle
-
-            if kwargs['cv_randomID'] == True:
-                try:
-                    import uuid
-                except ImportError:
-                    raise Exception('pyFUME tried to generate random IDs, but couldn`t find \'uuid\'. Please pip install uuid to proceed.')
+            if "save_kfold_models" == True:
+                import os, datetime, pickle
+    
+                if kwargs['cv_randomID'] == True:
+                    try:
+                        import uuid
+                    except ImportError:
+                        raise Exception('pyFUME tried to generate random IDs, but couldn`t find \'uuid\'. Please pip install uuid to proceed.')
+                    
+                    self.folder_name= 'pyFUME runID ' + str(uuid.uuid4())
+                elif kwargs['cv_randomID'] == False:
+                    self.folder_name= 'pyFUME run ' + datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
                 
-                self.folder_name= 'pyFUME runID ' + str(uuid.uuid4())
-            elif kwargs['cv_randomID'] == False:
-                self.folder_name= 'pyFUME run ' + datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
-            
-            owd = os.getcwd()
-            os.mkdir(self.folder_name)
-            os.chdir('./' + self.folder_name)
-            
-            self.performance_metric_per_fold=[np.inf]*kwargs['number_of_folds']
+                owd = os.getcwd()
+                os.mkdir(self.folder_name)
+                os.chdir('./' + self.folder_name)
+                
+                self.performance_metric_per_fold=[np.inf]*kwargs['number_of_folds']
             
             
             for fold_number in range(0, kwargs['number_of_folds']):
@@ -339,10 +341,10 @@ class BuildTSFIS(object):
         
                 self.model = simpbuilder.simpfulmodel
                 
-                # Save the created model in the dedicated folder
-                filename = 'Fold_' + str(fold_number) + '.pickle'
-                
-                pickle.dump(self, open(filename, 'wb'))
+                if "save_kfold_models" == True:
+                    # Save the created model in the dedicated folder
+                    filename = 'Fold_' + str(fold_number) + '.pickle'
+                    pickle.dump(self, open(filename, 'wb'))
                 
                 tester=SugenoFISTester(model=self.model, test_data=self.x_test, variable_names=self.selected_variable_names, golden_standard=self.y_test)
                 self.performance_metric_per_fold[fold_number]=tester.calculate_performance(metric=self.performance_metric)
