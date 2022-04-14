@@ -350,7 +350,9 @@ class BuildTSFIS(object):
                 self.performance_metric_per_fold[fold_number]=tester.calculate_performance(metric=self.performance_metric)
                 
             # set working directory back to where script is stored
-            os.chdir(owd)
+            if "save_kfold_models" == True:
+                os.chdir(owd)
+            
             print('The average ' + self.performance_metric + ' over ' + str(kwargs['number_of_folds']) +' folds is ' + str(np.mean(self.performance_metric_per_fold)) +' (with st. dev. ' + str(np.std(self.performance_metric_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.performance_metric_per_fold)) + ' with ' + self.performance_metric +  ' = ' + str(np.min(self.performance_metric_per_fold)) + '.')
                 
         elif kwargs['data_split_method'] == 'no_split':
