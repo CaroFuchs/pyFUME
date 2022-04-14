@@ -205,7 +205,7 @@ class BuildTSFIS(object):
             if 'number_of_folds' not in kwargs.keys(): kwargs['number_of_folds'] = 10
             if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
             if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
-            if 'save_kfold_models' not in kwargs.keys(): kwargs['save_kfold_models'] = 'True'
+            if 'save_kfold_models' not in kwargs.keys(): kwargs['save_kfold_models'] = True
 
             #Create lists with test indices for each fold.
             self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
@@ -235,7 +235,7 @@ class BuildTSFIS(object):
                 os.mkdir(self.folder_name)
                 os.chdir('./' + self.folder_name)
                 
-                self.performance_metric_per_fold=[np.inf]*kwargs['number_of_folds']
+            self.performance_metric_per_fold=[np.inf]*kwargs['number_of_folds']
             
             
             for fold_number in range(0, kwargs['number_of_folds']):
