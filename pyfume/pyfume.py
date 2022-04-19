@@ -188,8 +188,7 @@ class pyFUME(object):
             The fuzzy model (as an executable object).
         """          
         if self.FIS.model is None:
-            print ("ERROR: model was not created correctly, aborting.")
-            exit(-1)
+            raise Exception("ERROR: model was not created correctly, aborting.")
         else:
             return self.FIS.model
         
@@ -422,6 +421,9 @@ class pyFUME(object):
         normalization_values = self.FIS.normalization_values 
         antecedent_sets= self.FIS.antecedent_parameters
         
+        if normalization_values == None:
+            raise Exception('ERROR: The input data for the pyFUME model was not normalized during training. Denormaliztaion is therefore not possible.')
+        
         # Check if variables were removed (during feature selection)
         to_keep=[]
         for i in range(0,len(normalization_values)):
@@ -433,13 +435,18 @@ class pyFUME(object):
         
         # Denormalize the antecedent set parameters
         denormed_antecedent_sets = []
+        
+        x=0
+        cnt=0
         for i in range(0, len(antecedent_sets)):
-            if i in range(0,len(self.FIS.selected_variable_names)):
-                norm_vals=normalization_values[i]
-            else:
-                norm_vals=normalization_values[i-len(self.FIS.selected_variable_names)]
-            denormed_set=self._denormalize_antecedent_set(antecedent_sets[i], norm_vals)
-            denormed_antecedent_sets.append(denormed_set)
+             norm_vals = normalization_values[x]
+             denormed_set=self._denormalize_antecedent_set(antecedent_sets[i], norm_vals)
+             denormed_antecedent_sets.append(denormed_set)
+             cnt+=1
+            
+             if cnt == self.nr_clus:
+                x+=1
+                cnt = 0
         
         UoD = []
         _, mi, ma = zip(*self.FIS.normalization_values)
@@ -460,10 +467,7 @@ class pyFUME(object):
         
         # Plot the requested variable using Simpful
         dummymodel.plot_variable(var_name = variable_name, outputfile = output_file, TGT = highlight_element, highlight = highlight_mf, ax = ax, xscale = xscale)
-
-        
-
-
+      
 if __name__=='__main__':
     from numpy.random import seed
     seed(4)
