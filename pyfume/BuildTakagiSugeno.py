@@ -328,17 +328,30 @@ class BuildTSFIS(object):
                 self.consequent_parameters = ce.suglms()
         
                 # Build a first-order Takagi-Sugeno model using Simpful
-                     
-                simpbuilder = SugenoFISBuilder(
-                    self.antecedent_parameters, 
-                    self.consequent_parameters, 
-                    self.selected_variable_names, 
-                    normalization_values = self.normalization_values, 
-                    extreme_values = self._antecedent_estimator._extreme_values,
-                    operators=kwargs["operators"], 
-                    save_simpful_code='Fold_' + str(fold_number) +'_Simpful_code.py', 
-                    fuzzy_sets_to_drop=what_to_drop,
-                    verbose=False)
+                
+                if kwargs['save_kfold_models'] == True:
+                    simpbuilder = SugenoFISBuilder(
+                        self.antecedent_parameters, 
+                        self.consequent_parameters, 
+                        self.selected_variable_names, 
+                        normalization_values = self.normalization_values, 
+                        extreme_values = self._antecedent_estimator._extreme_values,
+                        operators=kwargs["operators"], 
+                        save_simpful_code='Fold_' + str(fold_number) +'_Simpful_code.py', 
+                        fuzzy_sets_to_drop=what_to_drop,
+                        verbose=False)
+                elif kwargs['save_kfold_models'] == False:
+                    simpbuilder = SugenoFISBuilder(
+                        self.antecedent_parameters, 
+                        self.consequent_parameters, 
+                        self.selected_variable_names, 
+                        normalization_values = self.normalization_values, 
+                        extreme_values = self._antecedent_estimator._extreme_values,
+                        operators=kwargs["operators"], 
+                        save_simpful_code=False, 
+                        fuzzy_sets_to_drop=what_to_drop,
+                        verbose=False)                    
+                        
         
                 self.model = simpbuilder.simpfulmodel
                 
