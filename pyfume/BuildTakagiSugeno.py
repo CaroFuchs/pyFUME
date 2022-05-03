@@ -10,7 +10,6 @@ from .FeatureSelection import FeatureSelector
 from .Sampler import Sampler
 import numpy as np
 
-
 class BuildTSFIS(object):
     """
         Learns a a new  Takagi-Sugeno fuzzy model.
@@ -29,15 +28,14 @@ class BuildTSFIS(object):
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
     def __init__(self, datapath=None, dataframe=None, nr_clus=None, variable_names=None, 
-            process_categorical=False, merge_threshold=1.0, **kwargs):
+            process_categorical=False, merge_threshold=1.0, verbose = False, **kwargs):
 
         self.datapath = datapath
         self.nr_clus = nr_clus
         self.variable_names = variable_names
         self._antecedent_estimator = None
-        verbose = False
+        self.verbose = verbose
 
-        if 'verbose' in kwargs.keys(): verbose = kwargs['verbose']
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
         if 'normalize' not in kwargs.keys(): kwargs['normalize'] = False 
@@ -67,8 +65,9 @@ class BuildTSFIS(object):
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
-        if 'verbose' not in kwargs.keys(): kwargs['verbose'] = True
         if 'cv_randomID' not in kwargs.keys(): kwargs['cv_randomID'] = False
+        if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+
 
         if self.nr_clus==None and kwargs['feature_selection'] == None:
             print('Error: please set pyFUME`s argument "nr_clus".')
@@ -78,9 +77,9 @@ class BuildTSFIS(object):
 
         # Load the data
         if self.datapath is None:
-            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
+            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=self.verbose)
         else:
-            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=verbose)
+            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=self.verbose)
         self.variable_names=dl.get_variable_names()
         
         if kwargs['normalize'] != False and kwargs['normalize'] != 'zscore':
@@ -99,7 +98,7 @@ class BuildTSFIS(object):
 
         if kwargs['data_split_method'] == 'hold-out' or kwargs['data_split_method'] == 'holdout':
            
-            if verbose: print(' * Hold-out method selected.')
+            if self.verbose: print(' * Hold-out method selected.')
             
             # Split the data using the hold-out method in a training (default: 75%) 
             # and test set (default: 25%).
@@ -111,7 +110,7 @@ class BuildTSFIS(object):
                 except ImportError:
                     raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
 
-                if verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
+                if self.verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)
                 self.x_test=imputer.fit_transform(self.x_test)
@@ -124,7 +123,7 @@ class BuildTSFIS(object):
             # Perform feature selection if requested
             if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
                 if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
-                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=kwargs['verbose'])
+                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()
@@ -135,7 +134,7 @@ class BuildTSFIS(object):
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                    self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 self.x_test = self.x_test[:, self.selected_feature_indices]
                 
@@ -148,10 +147,10 @@ class BuildTSFIS(object):
                 self.log_x_train = self.x_train.copy()
                 for i in self.log_indices:
                     self.log_x_train[i]= np.log(self.x_train[i])
-                cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=self.verbose)
             else:                
                 # Cluster the training data (in input-output space)
-                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=self.verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
@@ -197,14 +196,14 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 
                 save_simpful_code=kwargs['save_simpful_code'], 
-                fuzzy_sets_to_drop=what_to_drop, verbose=verbose)
+                fuzzy_sets_to_drop=what_to_drop, verbose=self.verbose)
     
             self.model = simpbuilder.simpfulmodel
             
         elif kwargs['data_split_method']=='cross_validation' or kwargs['data_split_method']=='k-fold_cross_validation' or kwargs['data_split_method']=='crossvalidation' or kwargs['data_split_method']=='cv' or kwargs['data_split_method']=='kfold':
             if 'number_of_folds' not in kwargs.keys(): kwargs['number_of_folds'] = 10
-            if verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
-            if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+            if self.verbose: print('K-fold cross validation was selected. The number of folds (k) equals', kwargs['number_of_folds'])
+            # if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
             if 'save_kfold_models' not in kwargs.keys(): kwargs['save_kfold_models'] = True
             if 'kfold_indices' not in kwargs.keys(): kwargs['kfold_indices'] = None
 
@@ -220,7 +219,7 @@ class BuildTSFIS(object):
                         
             # Create folder to store developed models
             if kwargs['save_kfold_models'] == True:
-                import os, datetime, pickle
+                import os, datetime
     
                 if kwargs['cv_randomID'] == True:
                     try:
@@ -235,12 +234,15 @@ class BuildTSFIS(object):
                 owd = os.getcwd()
                 os.mkdir(self.folder_name)
                 os.chdir('./' + self.folder_name)
-                
-            self.performance_metric_per_fold=[np.inf]*kwargs['number_of_folds']
-            
+                            
+            if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False: self.selected_features_per_fold = dict()
+            if kwargs['feature_selection'] == 'logwrapper': self.logged_features_per_fold = dict()
+
+            self.kfold_dict = dict()
+            args = []
             
             for fold_number in range(0, kwargs['number_of_folds']):
-                if verbose: print('Training the model for fold', fold_number)
+                if self.verbose: print('Training the model for fold', fold_number)
                 tst_idx=self.fold_indices[fold_number]
                 tst_idx = tst_idx[~np.isnan(tst_idx)]
                 tst_idx = [int(x) for x in tst_idx]
@@ -252,125 +254,27 @@ class BuildTSFIS(object):
                 self.x_train = np.array([self.dataX[i,:] for i in trn_idx])
                 self.x_test = np.array([self.dataX[i,:] for i in tst_idx])                      
                 self.y_train = np.array([self.dataY[i] for i in trn_idx])
-                self.y_test = np.array([self.dataY[i] for i in tst_idx]) 
+                self.y_test = np.array([self.dataY[i] for i in tst_idx])
                 
-                if np.isnan(self.dataX).any().any()== True:
-                    try:
-                        from sklearn.impute import KNNImputer
-                    except ImportError:
-                        raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
-
-                    if verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
-                    imputer = KNNImputer(n_neighbors=3, weights="uniform")
-                    self.x_train=imputer.fit_transform(self.x_train)
-                    self.x_test=imputer.fit_transform(self.x_test)
-                
-                if kwargs['oversampling'] == True:
-                    sample = Sampler(train_x = self.x_train, train_y=self.y_train, number_of_bins =  kwargs['sampling_number_of_bins'], histogram =  kwargs['sampling_histogram'])
-                    self.x_train, self.y_train = sample.oversample()
-            
-                # Perform feature selection if requested
-                if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
-                    fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=kwargs['verbose'])
-                    self.x_train_before_fs=self.x_train.copy()
-                    self.x_test_before_fs=self.x_test.copy()
-                    
-                    if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
-                        self.selected_feature_indices, self.selected_variable_names=fs.wrapper(feature_selection_stop=0.05)
-                    elif kwargs['feature_selection'] == 'logwrapper':
-                        self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
-                    elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                        self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
-                    
-                    self.x_train = self.x_train[:, self.selected_feature_indices]
-                    self.x_test = self.x_test[:, self.selected_feature_indices]
-                elif kwargs['feature_selection'] == None:
-                    self.selected_variable_names= self.variable_names                    
-                
-                # Cluster the data, log-transform when needed.
                 if kwargs['feature_selection'] == 'logwrapper':
-                    # Use log transformed variables if needed
-                    self.log_x_train = self.x_train.copy()
-                    for i in self.log_indices:
-                        self.log_x_train[i]= np.log(self.x_train[i])
-                    cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
-                else:                
-                    # Cluster the training data (in input-output space)
-                    cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                    raw_x_train = dl.get_non_normalized_x_data() 
+                    self.raw_x_train = np.array([raw_x_train[i,:] for i in trn_idx])
                 
-                
-                if kwargs['cluster_method'] == 'fcm':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
-                        fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
-                elif kwargs['cluster_method'] == 'fst-pso':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fstpso', 
-                        fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
-                        fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
-                elif kwargs['cluster_method'] == 'gk':
-                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='gk')
-                else: 
-                    print('ERROR: Choose a valid clustering method.')
-                    import sys
-                    sys.exit()    
-                
-                # Estimate the membership funtions of the system (default shape: gauss)
-                self._antecedent_estimator = AntecedentEstimator(self.x_train, self.partition_matrix)
-        
-                self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
-                what_to_drop = self._antecedent_estimator._info_for_simplification
-        
-                # Calculate the firing strengths
-                fsc=FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.selected_variable_names, **kwargs)
-                self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
-                
-                # Estimate the parameters of the consequent
-                ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths)
-                self.consequent_parameters = ce.suglms()
-        
-                # Build a first-order Takagi-Sugeno model using Simpful
-                
-                if kwargs['save_kfold_models'] == True:
-                    simpbuilder = SugenoFISBuilder(
-                        self.antecedent_parameters, 
-                        self.consequent_parameters, 
-                        self.selected_variable_names, 
-                        normalization_values = self.normalization_values, 
-                        extreme_values = self._antecedent_estimator._extreme_values,
-                        operators=kwargs["operators"], 
-                        save_simpful_code='Fold_' + str(fold_number) +'_Simpful_code.py', 
-                        fuzzy_sets_to_drop=what_to_drop,
-                        verbose=False)
-                elif kwargs['save_kfold_models'] == False:
-                    simpbuilder = SugenoFISBuilder(
-                        self.antecedent_parameters, 
-                        self.consequent_parameters, 
-                        self.selected_variable_names, 
-                        normalization_values = self.normalization_values, 
-                        extreme_values = self._antecedent_estimator._extreme_values,
-                        operators=kwargs["operators"], 
-                        save_simpful_code=False, 
-                        fuzzy_sets_to_drop=what_to_drop,
-                        verbose=False)                    
-                        
-        
-                self.model = simpbuilder.simpfulmodel
-                
-                if kwargs['save_kfold_models'] == True:
-                    # Save the created model in the dedicated folder
-                    filename = 'Fold_' + str(fold_number) + '.pickle'
-                    pickle.dump(self, open(filename, 'wb'))
-                
-                tester=SugenoFISTester(model=self.model, test_data=self.x_test, variable_names=self.selected_variable_names, golden_standard=self.y_test)
-                self.performance_metric_per_fold[fold_number]=tester.calculate_performance(metric=self.performance_metric)
-                
+                args.append([fold_number, self.x_train, self.x_test, self.y_train, self.y_test])
+                nm = 'fold_' + str(fold_number)
+                self.kfold_dict[nm] = self._create_kfold_model(*args[fold_number], **kwargs) 
+            
             # set working directory back to where script is stored
             if kwargs['save_kfold_models'] == True:
                 os.chdir(owd)
             
-            print('The average ' + self.performance_metric + ' over ' + str(kwargs['number_of_folds']) +' folds is ' + str(np.mean(self.performance_metric_per_fold)) +' (with st. dev. ' + str(np.std(self.performance_metric_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.performance_metric_per_fold)) + ' with ' + self.performance_metric +  ' = ' + str(np.min(self.performance_metric_per_fold)) + '.')
+            self.performance_metric_per_fold = np.array([x['performance'] for x in self.kfold_dict.values()])
+            
+            # print('The average ' + self.performance_metric + ' over ' + str(kwargs['number_of_folds']) +' folds is ' + str(np.mean(self.performance_metric_per_fold)) +' (with st. dev. ' + str(np.std(self.performance_metric_per_fold)) + '). \nThe best model was created in fold ' +  str(np.argmin(self.performance_metric_per_fold)) + ' with ' + self.performance_metric +  ' = ' + str(np.min(self.performance_metric_per_fold)) + '.')
+            if self.verbose: print('The average ' + self.performance_metric + ' over ' + str(kwargs['number_of_folds']) +' folds is ' + str(np.mean(self.performance_metric_per_fold)) +' (with st. dev. ' + str(np.std(self.performance_metric_per_fold)) + ').')
                 
         elif kwargs['data_split_method'] == 'no_split':
-            if verbose: print('No test data will be split off, all data will be used for training.')
+            if self.verbose: print('No test data will be split off, all data will be used for training.')
             
             self.x_train = self.dataX.copy()
             self.y_train = self.dataY.copy()
@@ -381,7 +285,7 @@ class BuildTSFIS(object):
                 except ImportError:
                     raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
 
-                if verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')
+                if self.verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')
     
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
                 self.x_train=imputer.fit_transform(self.x_train)
@@ -393,7 +297,7 @@ class BuildTSFIS(object):
             # Perform feature selection if requested
             if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:
                 if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
-                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=kwargs['verbose'])
+                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
                 
                 # Keep copies of the training and test set before dropping unselected features
                 self.x_train_before_fs=self.x_train.copy()
@@ -401,7 +305,7 @@ class BuildTSFIS(object):
                 if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                     self.selected_feature_indices, self.variable_names=fs.wrapper()
                 elif kwargs['feature_selection'] == 'logwrapper':
-                    self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
+                    self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper(raw_data = self.raw_x_train)
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
                     self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
@@ -415,10 +319,10 @@ class BuildTSFIS(object):
                 self.log_x_train = self.x_train.copy()
                 for i in self.log_indices:
                     self.log_x_train[i]= np.log(self.x_train[i])
-                cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=self.verbose)
             else:                
                 # Cluster the training data (in input-output space)
-                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=verbose)
+                cl = Clusterer(x_train=self.x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=self.verbose)
             
             if kwargs['cluster_method'] == 'fcm':
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
@@ -464,7 +368,7 @@ class BuildTSFIS(object):
                 operators=kwargs["operators"], 
                 save_simpful_code=kwargs['save_simpful_code'], 
                 fuzzy_sets_to_drop=what_to_drop,
-                verbose=verbose)
+                verbose=self.verbose)
     
             self.model = simpbuilder.simpfulmodel
             
@@ -472,3 +376,131 @@ class BuildTSFIS(object):
             print('ERROR: invalid data splitting method chosen. Training will be aborted.')
             import sys
             sys.exit()
+
+
+    def _create_kfold_model(self, fold_number, x_train, x_test, y_train, y_test, merge_threshold = 1.0, **kwargs):
+        
+        # Create a dictionary to keep track of settings and results
+        fold_dict= dict()
+        
+        fold_dict['fold_number'] = fold_number
+        fold_dict['x_train'] = x_train
+        fold_dict['x_test'] = x_test
+        fold_dict['y_train'] = y_train
+        fold_dict['y_test'] = y_test
+        fold_dict['GRABS_threshold'] = merge_threshold
+        fold_dict['nr_clus'] = self.nr_clus
+        
+        
+        if np.isnan(fold_dict['x_train']).any().any()== True:
+            try:
+                from sklearn.impute import KNNImputer
+            except ImportError:
+                raise Exception('pyFUME tried to impute missing values, but couldn`t find \'sklearn\'. Please pip install sklearn to proceed.')
+
+            if self.verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
+            imputer = KNNImputer(n_neighbors=3, weights="uniform")
+            fold_dict['x_train']=imputer.fit_transform(fold_dict['x_train'])
+            fold_dict['x_test']=imputer.fit_transform(fold_dict['x_test'])
+        
+        if kwargs['oversampling'] == True:
+            sample = Sampler(train_x = fold_dict['x_train'], train_y=fold_dict['y_train'], number_of_bins =  kwargs['sampling_number_of_bins'], histogram =  kwargs['sampling_histogram'])
+            fold_dict['x_train'], fold_dict['y_train'] = sample.oversample()
+    
+        # Perform feature selection if requested
+        if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:                    
+            fs = FeatureSelector(fold_dict['x_train'], fold_dict['y_train'], self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
+            fold_dict['x_train_before_fs']=fold_dict['x_train'].copy()
+            fold_dict['x_test_before_fs']=fold_dict['x_test'].copy()
+            
+            if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
+                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names']=fs.wrapper()
+            elif kwargs['feature_selection'] == 'logwrapper':
+                raw_xdata = self.raw_x_train
+                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['log_indices'], fold_dict['log_variable_names'] = fs.log_wrapper(raw_data = raw_xdata)
+            elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
+                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['nr_clus']= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+            
+            tmp = fold_dict['x_train']
+            idx = fold_dict['selected_feature_indices']
+            fold_dict['x_train'] = tmp[:, idx]
+            
+            tmp = fold_dict['x_test']
+            fold_dict['x_test'] = tmp[:, idx]
+
+        
+        elif kwargs['feature_selection'] == None:
+            fold_dict['selected_variable_names']= self.variable_names                    
+        
+        # Cluster the data, log-transform when needed.
+        if kwargs['feature_selection'] == 'logwrapper':
+            # Use log transformed variables if needed
+            tmp = fold_dict['x_train'].copy()
+            idx = fold_dict['log_indices']
+            for i in idx:
+                tmp[i]= np.log(tmp[i])
+            fold_dict['log_x_train']= tmp
+            cl = Clusterer(x_train=fold_dict['log_x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
+        else:                
+            # Cluster the training data (in input-output space)
+            cl = Clusterer(x_train=fold_dict['x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
+        
+        
+        if kwargs['cluster_method'] == 'fcm':
+            fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
+                fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
+        elif kwargs['cluster_method'] == 'fst-pso':
+            fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='fstpso', 
+                fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
+                fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
+        elif kwargs['cluster_method'] == 'gk':
+            fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='gk')
+        else: 
+            print('ERROR: Choose a valid clustering method.')
+            import sys
+            sys.exit()    
+        
+        # Estimate the membership funtions of the system (default shape: gauss)
+        antecedent_estimator = AntecedentEstimator(fold_dict['x_train'], fold_dict['partition_matrix'])
+
+        fold_dict['antecedent_parameters'] = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=fold_dict['GRABS_threshold'])
+        fold_dict['what_to_drop'] = antecedent_estimator._info_for_simplification
+
+        # Calculate the firing strengths
+        fsc=FireStrengthCalculator(antecedent_parameters=fold_dict['antecedent_parameters'], nr_clus=fold_dict['nr_clus'], variable_names=fold_dict['selected_variable_names'], **kwargs)
+        fold_dict['firing_strengths'] = fsc.calculate_fire_strength(data=fold_dict['x_train'])
+        
+        # Estimate the parameters of the consequent
+        ce = ConsequentEstimator(fold_dict['x_train'], fold_dict['y_train'], fold_dict['firing_strengths'])
+        fold_dict['consequent_parameters'] = ce.suglms()
+
+        # Build a first-order Takagi-Sugeno model using Simpful
+        
+        if kwargs['save_kfold_models'] == True:
+            simpbuilder = SugenoFISBuilder(
+                fold_dict['antecedent_parameters'], 
+                fold_dict['consequent_parameters'], 
+                fold_dict['selected_variable_names'], 
+                normalization_values = self.normalization_values, 
+                extreme_values = antecedent_estimator._extreme_values,
+                operators=kwargs["operators"], 
+                save_simpful_code='Fold_' + str(fold_number) +'_Simpful_code.py', 
+                fuzzy_sets_to_drop=fold_dict['what_to_drop'],
+                verbose=False)
+        elif kwargs['save_kfold_models'] == False:
+            simpbuilder = SugenoFISBuilder(
+                fold_dict['antecedent_parameters'], 
+                fold_dict['consequent_parameters'], 
+                fold_dict['selected_variable_names'], 
+                normalization_values = self.normalization_values, 
+                extreme_values = antecedent_estimator._extreme_values,
+                operators=kwargs["operators"], 
+                save_simpful_code=False, 
+                fuzzy_sets_to_drop=fold_dict['what_to_drop'],
+                verbose=False)                    
+        fold_dict['model'] = simpbuilder.simpfulmodel
+        
+        fold_dict['performance_metric'] =  self.performance_metric
+        tester=SugenoFISTester(model=fold_dict['model'], test_data=fold_dict['x_test'], variable_names=fold_dict['selected_variable_names'], golden_standard=fold_dict['y_test'] )
+        fold_dict['performance']=tester.calculate_performance(metric=fold_dict['performance_metric'])
+        return fold_dict

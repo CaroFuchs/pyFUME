@@ -69,6 +69,8 @@ class SugenoFISTester(object):
             err=self.calculate_RMSE()        
         elif metric == 'MAPE':
             err=self.calculate_MAPE()
+        elif metric == 'accuracy':
+            err=self.calculate_accuracy()
         else:
             print('The requested performance metric has not been implemented (yet).')
             
@@ -114,7 +116,52 @@ class SugenoFISTester(object):
         """
         
         if self._golden_standard is None:
-             raise Exception('To compute the MAPE the true label (golden standard) of the test data should be provided')
+             raise Exception('To compute the MAPE the true label (golden standard) of the test data should be provided.')
         
         _, error=self.predict()
         return np.mean(np.abs((error) / self._golden_standard)) * 100
+    
+    def calculate_accuracy(self, threshold = 0.5):
+        """
+        Calculates the accuracy of the model for binary problems, given the test data and a discretization threshold .
+        
+        Args:
+            treshold: The treshold to discretize the predicted output in binary categories.
+        Returns:
+            The accuracy of the fuzzy model.
+        """
+        
+        confusion_matrix= self.generate_confusion_matrix(threshold=threshold)
+        acc = round((confusion_matrix['TP']+confusion_matrix['TN'])/(confusion_matrix['TP']+confusion_matrix['TN']+confusion_matrix['FP']+confusion_matrix['FN']),3)
+        return acc
+    
+    def generate_confusion_matrix(self, threshold = 0.5):
+        """
+        Calculates the confusion matrix for binary output data.
+        
+        Args:
+            treshold: The treshold to discretize the predicted output in binary categories.
+        
+        Returns:
+            Dictionary containing the confusion martrix.
+        """
+        # Check if golden standard is present
+        if self._golden_standard is None:
+            raise Exception('To calculate the confusion matrix, the true label (golden standard) of the test data should be provided.') 
+        
+        # Get the predicted values for the test data
+        ypred, _ =self.predict()
+        
+        # discretize ypred using a user-specified thresehold
+        discrete_ypred = np.digitize(ypred,bins=[threshold])
+        
+        # Create the confusion matrix as a dictionary
+        confusion_matrix = dict()
+        
+        confusion_matrix['TP'] = np.sum(np.logical_and(discrete_ypred == 1, self._golden_standard == 1))
+        confusion_matrix['TN'] = np.sum(np.logical_and(discrete_ypred == 0, self._golden_standard == 0))
+        confusion_matrix['FP'] = np.sum(np.logical_and(discrete_ypred == 1, self._golden_standard == 0))
+        confusion_matrix['FN'] = np.sum(np.logical_and(discrete_ypred == 0, self._golden_standard == 1))
+        return confusion_matrix
+    
+    
