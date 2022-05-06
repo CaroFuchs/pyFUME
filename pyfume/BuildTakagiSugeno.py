@@ -206,6 +206,8 @@ class BuildTSFIS(object):
             # if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
             if 'save_kfold_models' not in kwargs.keys(): kwargs['save_kfold_models'] = True
             if 'kfold_indices' not in kwargs.keys(): kwargs['kfold_indices'] = None
+            if 'paralellization_kfold' not in kwargs.keys(): kwargs['paralellization_kfold'] = False
+
 
             #Create lists with test indices for each fold.
             if kwargs['kfold_indices'] == None:
@@ -262,7 +264,16 @@ class BuildTSFIS(object):
                 
                 args.append([fold_number, self.x_train, self.x_test, self.y_train, self.y_test])
                 nm = 'fold_' + str(fold_number)
-                self.kfold_dict[nm] = self._create_kfold_model(*args[fold_number], **kwargs) 
+                
+                if kwargs['paralellization_kfold'] == False:
+                    self.kfold_dict[nm] = self._create_kfold_model(*args[fold_number], **kwargs) 
+            
+            if kwargs['paralellization_kfold'] == True:
+                print('Paralellization of code is currently not possible yet. Coming soon!')
+
+            
+            # import sys
+            # sys.exit(1)
             
             # set working directory back to where script is stored
             if kwargs['save_kfold_models'] == True:
@@ -307,7 +318,7 @@ class BuildTSFIS(object):
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper(raw_data = self.raw_x_train)
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                    self.selected_feature_indices, self.variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 
             elif kwargs['feature_selection'] == None:

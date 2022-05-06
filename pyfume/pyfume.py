@@ -31,7 +31,7 @@ class pyFUME(object):
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
     def __init__(self, datapath=None, dataframe=None, nr_clus=2, process_categorical=False, method='Takagi-Sugeno', variable_names=None, merge_threshold=1., **kwargs):
-
+      
         if datapath is None and dataframe is None:
             raise Exception("ERROR: a dataset was not specified. Please either use the datapath or dataframe arguments.")
 
@@ -258,6 +258,25 @@ class pyFUME(object):
         test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
         MAPE = test.calculate_MAPE()
         return MAPE
+    
+    def _get_accuracy(self):
+        # Calculate the accuraccy of the model using the test data set
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
+        accuracy = test.calculate_accuracy()
+        return accuracy
+    
+    def calculate_AUC(self, number_of_slices=100, show_plot = False):
+        # Calculate the area under the ROC curve of the model using the test data set
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
+        AUC = test.calculate_AUC(number_of_slices, show_plot)
+        return AUC
+
+    
+    def get_confusion_matrix(self):
+        # Calculate the confusion matrix of the model using the test data set
+        test = SugenoFISTester(model=self.FIS.model, test_data=self.FIS.x_test, golden_standard=self.FIS.y_test, variable_names=self.FIS.variable_names)
+        con_mat = test.generate_confusion_matrix()
+        return con_mat
     
     def get_data(self, data_set='test'):
         """

@@ -132,7 +132,7 @@ class SimpfulConverter(object):
                 
                 chunk += 'FS_%d = FuzzySet(' % (j+1)
                 term = 'cluster%d' % (cluster+1)
-                                
+                                                
                 fstype, params = self._fuzzy_sets[j]
                 if fstype == 'gauss':
                     chunk += "function=Gaussian_MF(%f, %f), term='%s')" % (params[0], params[1], term) 

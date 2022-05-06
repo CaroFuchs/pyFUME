@@ -81,6 +81,8 @@ class DataLoader(object):
         self.dataY=self.data[:,-1]
 
         if normalize=='minmax' or normalize=='linear' or normalize==True:
+            self.raw_dataX=self.dataX.copy()
+            
             mini=self.dataX.min(axis=0)
             maxi=self.dataX.max(axis=0)
             self.normalization_values=zip(self.variable_names, mini, maxi)
@@ -102,6 +104,7 @@ class DataLoader(object):
     
     def get_target_data(self):
         return self.dataY
+    
     def get_all_data(self):
         return self.data
     
@@ -110,6 +113,9 @@ class DataLoader(object):
     
     def get_normalization_values(self):
         return self.normalization_values
+    
+    def get_non_normalized_x_data(self):
+        return self.raw_dataX
 
 
 if __name__ == "__main__":

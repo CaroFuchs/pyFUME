@@ -142,12 +142,27 @@ class Clusterer(object):
             except:
                 error = 0.005
             try:
-                error = kwargs["RFCM_initialization"]
+                initialization = kwargs["RFCM_initialization"]
             except:
                 initialization = 'random_initialization'
             
             centers, partition_matrix, jm = self._rfcm(R=self.relational_data, c=self.nr_clus, m = self.m, epsilon = error, maxIter = max_iter, initType = initialization)            
+        elif method == 'FKP' or method == 'fkp' or method == "fuzzy_k_protoypes":
+            try:
+                max_iter = kwargs["FKP_max_iter"]
+            except:
+                max_iter=100
+            try:
+                error = kwargs["FKP_error"]
+            except:
+                error = 0.005
+            try:
+                cat_ind = kwargs["categorical_indices"]
+            except:
+                raise Exception('To utilize fuzzy K-prototypes clustering, the keyword "categorical_indices" should be specified.')
             
+            centers, partition_matrix, jm = self.fuzzy_k_protoypes(data = self.data, categorical_indices = cat_ind, n_clusters = self.nr_clus, m = self.m, max_iter = max_iter, error=error)          
+                    
         return centers, partition_matrix, jm
 
     def _fcm(self, data, n_clusters, m=2, max_iter=1000, error=0.005):
@@ -195,6 +210,86 @@ class Clusterer(object):
         partition_matrix = ut.T
         return centers, partition_matrix, jm
     
+    def _fuzzy_k_protoypes(self, data, categorical_indices, n_clusters, m=2, max_iter=1000, error=0.005):
+        #data: 2d array, size (N, S). N is the number of instances; S is the number of variables
+        #n_clusters: number of clusters
+        #m: fuzzy clustering coefficient
+        #max_it: maximum number of iterations, default=1000
+        #error: stopping criterion, default=0.005
+        #seed: seed for random initialization of u matrix
+        
+        n_instances = data.shape[0]
+        
+        #randomly initaliaze u
+        u = np.random.rand(n_instances, n_clusters)
+        u = np.fmax(u, np.finfo(np.float64).eps)
+        ut = u.T
+        
+        for it in range(0,max_iter):
+            #copy old u matrix
+            u_old = ut.copy()
+            u_old /= np.ones((n_clusters, 1)).dot(np.atleast_2d(u_old.sum(axis=0)))
+            u_old = np.fmax(u_old, np.finfo(np.float64).eps)
+        
+            #elevate to m
+            um = u_old ** m
+        
+            #calculate cluster centers
+            prototypes = self._FKP_prototypes(um, data, n_clusters, categorical_indices)
+        
+            #calculate distances
+            dist = self._FKP_distances(prototypes, data, categorical_indices, numerical_metric='euclidean')
+            dist = np.fmax(dist, np.finfo(np.float64).eps)
+        
+            #calculate objective
+            jm = (um * dist ** 2).sum()
+        
+            #calculate new u matrix
+            ut = dist ** (- 2. / (m - 1))
+            ut /= np.ones((n_clusters, 1)).dot(np.atleast_2d(ut.sum(axis=0)))
+        
+            #stopping criterion
+            if np.linalg.norm(ut - u_old) < error:
+                break
+        
+        partition_matrix = ut.T
+        
+        return prototypes, partition_matrix, jm
+    
+    def _FKP_prototypes(self, um, data, n_clusters, categorical_indices): 
+        # Find the means to locate the cluster centers
+        prototypes = um.dot(data) / (np.ones((data.shape[1], 1)).dot(np.atleast_2d(um.sum(axis=1))).T)
+        
+        # Transpose um
+        um = um.T
+        
+        
+        # Replace the mean with the mode if the variable is categorical
+        for col_idx in categorical_indices:
+            cats = np.unique([data[:,col_idx]])          # Find unique categories
+            for clus in range(n_clusters):               # Find for each cluster the max summed membership
+                freq=dict()
+                for c in cats:
+                    umpc = um[data[:,col_idx]==c,:]
+                    freq[c]=sum(umpc[:,clus])   
+                prototypes[clus, col_idx] = max(freq, key=freq.get)    
+        return prototypes
+    
+    def _FKP_distances(self, prototypes, data, categorical_indices, numerical_metric='euclidean'):
+        # If the data is categorical, determine if value is different from the mode
+        # if data point == mode, distance = np.finfo(np.float64).eps
+        # if data point ~= mode, distance i= 1
+        dummy_proto = prototypes.copy()
+        dummy_proto[:, categorical_indices] = 1
+        
+        distances = np.empty([prototypes.shape[0], data.shape[0]])
+        for i in range(prototypes.shape[0]):
+            dummy_data = data.copy()
+            for cat in categorical_indices:
+                dummy_data[:,cat] = np.where(data[:,cat]==prototypes[i,cat], 1,0)
+            # If the data is numerical use euclidean distance
+            distances[i,:] = cdist(dummy_proto[i,:, None].T, dummy_data, metric='euclidean')
+        return distances
     
     def _fstpso(self, data, n_clusters, max_iter=100, n_particles=None, m=2, path_fit_dump=None, path_sol_dump=None):
         #data: 2d array, size (N, S). N is the number of instances; S is the number of variables
@@ -499,5 +594,15 @@ class Clusterer(object):
         
         # Return the cluster center location, the membership matrix and the fitness value
         return V, U, jm
+    
+if __name__=='__main__':
+    data = np.genfromtxt('data.csv', delimiter=',')
+    cat_ind = [3]
+    
+    cl = Clusterer(data=data, nr_clus=3)
+
+    # Perform FKP
+    cluster_centers, partition_matrix, _ = cl._fuzzy_k_protoypes(data = data, categorical_indices = cat_ind, n_clusters = 2, m=2, max_iter=1000, error=0.005)
+
         
 

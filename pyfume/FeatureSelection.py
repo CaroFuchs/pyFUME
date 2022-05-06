@@ -1,3 +1,4 @@
+from .LoadData import DataLoader
 from .Splitter import DataSplitter
 from .SimpfulModelBuilder import SugenoFISBuilder
 from .Clustering import Clusterer
@@ -6,6 +7,7 @@ from .FireStrengthCalculator import FireStrengthCalculator
 from .EstimateConsequentParameters import ConsequentEstimator
 from .Tester import SugenoFISTester
 import numpy as np
+import pandas as pd
 
 class FeatureSelector(object):
     """
@@ -27,7 +29,7 @@ class FeatureSelector(object):
         self.model_order=model_order
         self.verbose=verbose
         
-    def log_wrapper(self,**kwargs):
+    def log_wrapper(self, raw_data, **kwargs):
         """
             Performs feature selection using the wrapper method while also checking whether .
             
@@ -42,14 +44,29 @@ class FeatureSelector(object):
         """
             
         # Create a training and validation set for the feature selection phase
-        ds = DataSplitter()
-        x_feat, y_feat, x_val, y_val = ds.holdout(self.dataX, self.dataY)
+        x_feat = self.dataX.copy()
+        y_feat = self.dataY.copy()
         
+        
+        # Set negative or value == 0 to small number to be able to perform log
+        epsilon = np.finfo(np.float64).eps
+        raw_data[raw_data <= 0] = epsilon
+        
+        x_logged = np.log(raw_data)
+        x_logged_norm = (x_logged - np.nanmin(x_logged, axis =0)) / (np.nanmax(x_logged, axis =0)-np.nanmin(x_logged, axis =0))
+
         # Set initial values for the performance
-        old_performance=np.inf
-        new_performance=np.inf
-        perfs=[]
-        
+        if self.performance_metric != 'accuracy': 
+            old_performance=np.inf
+            new_performance=np.inf
+            perfs=[]
+        elif self.performance_metric == 'accuracy':
+            old_performance=-np.inf
+            new_performance=-np.inf
+            perfs=[]
+        else: 
+            raise Exception('Unknown performance metric.')
+    
         # Create a set with the unselected (currently all) and selected (none yet) variables
         selected_features=[]
         unselected_features=list(range(0,np.size(x_feat,axis=1)))
@@ -60,85 +77,128 @@ class FeatureSelector(object):
         temp_logvars_num = []
         temp_logvars  = []
         
-        # Add a very small number before log transforming to avoid 0s in normalized data
-        epsilon = np.finfo(np.float64).eps
-        
         stop=False
 
         while stop == False: 
-            perfs= [np.inf]*np.size(x_feat,axis=1)
             
-            for f in [x for x in unselected_features if x != -1]:
-                considered_features = selected_features + [f]
-                var_names = [self.variable_names[i] for i in considered_features]
-                
-                # Prepare training sets
-                feat=x_feat[:,considered_features]
-                tmp = x_feat.copy()
-                tmp[f] = np.log(tmp[f]+epsilon)
-                log_feat=tmp[:,considered_features]
-
-                
-                # Prepare validation sets 
-                x_validation=x_val[:,considered_features] 
-                tmp=x_val.copy()
-                tmp[f]=np.log(tmp[f]+epsilon)  
-                log_x_validation=tmp[:,considered_features] 
-
-
-                if self.verbose==True: 
-                    print('Evaluating feature sub-set including:', var_names)
-                
-                try:
-                    normal_perf = self._evaluate_feature_set(x_data=feat, y_data=y_feat, x_val=x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
-                    log_perf = self._evaluate_feature_set(x_data=log_feat, y_data=y_feat, x_val=log_x_validation, y_val=y_val, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+            if self.performance_metric != 'accuracy': 
+                perfs= [np.inf]*np.size(x_feat,axis=1)
+            elif self.performance_metric == 'accuracy':
+                perfs= [-1*np.inf]*np.size(x_feat,axis=1)
+            else: 
+                raise Exception('Unknown performance metric.')
+            
+            
+            if self.performance_metric != 'accuracy':
+                for f in [x for x in unselected_features if x != -1]:
+                    considered_features = selected_features + [f]
+                    var_names = [self.variable_names[i] for i in considered_features]
+                    
+                    # Prepare training sets
+                    feat=x_feat[:,considered_features]
+                    logged_feature = x_logged_norm[:,f]
+                    
+                    log_feat= feat.copy()
+                    log_feat[:,f]=logged_feature
+    
+                    if self.verbose: print('Evaluating feature sub-set including:', var_names)
+            
+                    normal_perf = self._evaluate_feature_set(x_data=feat, y_data=y_feat, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                    log_perf = self._evaluate_feature_set(x_data=log_feat, y_data=y_feat, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
                     if log_perf < normal_perf: 
                        temp_logvars.append(var_names[-1])
                        temp_logvars_num.append(f)
-                       print(" * In this sub-set, the variable(s)", logvars + list([var_names[-1]]), "will be log-transformed.")
+                       if self.verbose: print(" * In this sub-set, the variable(s)", logvars + list([var_names[-1]]), "will be log-transformed.")
                     elif log_perf > normal_perf and len(logvars)>0:
-                        print(" * In this sub-set, the variable(s)", logvars, "will be log-transformed.")
-
+                        if self.verbose: print(" * In this sub-set, the variable(s)", logvars, "will be log-transformed.")
+    
                     perfs[f] = min(normal_perf, log_perf)
-                except RuntimeError:
-                    raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info.')
-                    import sys
-                    sys.exit(1)
-                    
-            new_performance=min(perfs)
-            new_feature=unselected_features[perfs.index(new_performance)]
-            
-            del perfs
-            
-            if new_performance<old_performance: #*feature_selection_stop:
-                selected_features.append(new_feature)
-                                
-                # Check if the last addded feature should be log-transformed and if so, perform the transformation
-                if new_feature in temp_logvars_num:
-                       logvars.append(self.variable_names[new_feature])
-                       logvars_num.append(new_feature)
-                    
-                       x_feat[new_feature] = np.log(x_feat[new_feature]+epsilon)
-                       x_val[new_feature] = np.log(x_val[new_feature]+epsilon)
-                  
-                unselected_features[new_feature]=-1
-                old_performance=new_performance
                 
-                temp_logvars_num = []
-                temp_logvars  = []
-
-            else:
-                print('***** FEATURE SELECTION ENDED *****')
-                print('The selected features have a', self.performance_metric, 'of:', old_performance)
-                stop = True 
+                new_performance=min(perfs)
+                new_feature=unselected_features[perfs.index(new_performance)]
+                    
+                del perfs
+                    
+                if new_performance<old_performance: #*feature_selection_stop:
+                    selected_features.append(new_feature)
+                                    
+                    # Check if the last addded feature should be log-transformed and if so, perform the transformation
+                    if new_feature in temp_logvars_num:
+                           logvars.append(self.variable_names[new_feature])
+                           logvars_num.append(new_feature)
+                           x_feat[new_feature] = x_logged_norm[new_feature]
+                      
+                    unselected_features[new_feature]=-1
+                    old_performance=new_performance
+                    
+                    temp_logvars_num = []
+                    temp_logvars  = []
+    
+                else:
+                    if self.verbose: print('***** FEATURE SELECTION ENDED *****')
+                    if self.verbose: print('The selected features have a', self.performance_metric, 'of:', old_performance)
+                    stop = True 
+                    
+            elif self.performance_metric == 'accuracy':
+                for f in [x for x in unselected_features if x != -1]:
+                    considered_features = selected_features + [f]
+                    var_names = [self.variable_names[i] for i in considered_features]
+                    
+                    # Prepare training sets
+                    feat=x_feat[:,considered_features]
+                    logged_feature = x_logged_norm[:,f]
+                    log_feat = feat.copy()                    
+                    log_feat[:,-1]=logged_feature
+                    
+                    if self.verbose: print('Evaluating feature sub-set including:', var_names)
+            
+                    normal_perf = self._evaluate_feature_set(x_data=feat, y_data=y_feat, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                    log_perf = self._evaluate_feature_set(x_data=log_feat, y_data=y_feat, nr_clus=self.nr_clus, var_names=var_names, model_order=self.model_order, performance_metric = self.performance_metric, **kwargs)
+                    print("Normal performance:", normal_perf, ", Logged performance:", log_perf)
+                    
+                    if log_perf > normal_perf: 
+                       temp_logvars.append(var_names[-1])
+                       temp_logvars_num.append(f)
+                       if self.verbose: print(" * In this sub-set, the variable(s)", logvars + list([var_names[-1]]), "will be log-transformed.")
+                    elif log_perf < normal_perf and len(logvars)>0:
+                        if self.verbose: print(" * In this sub-set, the variable(s)", logvars, "will be log-transformed.")
+    
+                    perfs[f] = max(normal_perf, log_perf)
+    
+                new_performance=max(perfs)
+                new_feature=unselected_features[perfs.index(new_performance)]
+                    
+                del perfs
+                
+                if new_performance>old_performance: #*feature_selection_stop:
+                    selected_features.append(new_feature)
+                                    
+                    # Check if the last addded feature should be log-transformed and if so, perform the transformation
+                    if new_feature in temp_logvars_num:
+                           logvars.append(self.variable_names[new_feature])
+                           logvars_num.append(new_feature)
+                        
+                           x_feat[new_feature] = x_logged_norm[new_feature]
+                      
+                    unselected_features[new_feature]=-1
+                    old_performance=new_performance
+                    
+                    temp_logvars_num = []
+                    temp_logvars  = []
+    
+                else:
+                    if self.verbose: print('***** FEATURE SELECTION ENDED *****')
+                    if self.verbose: print('The selected features have a', self.performance_metric, 'of:', old_performance)
+                    stop = True                 
        
         # Show the user which variables were selected, and which ones were log-transformed.
         selected_feature_names = [self.variable_names[i] for i in selected_features]
-        print('The following features were selected:',  selected_feature_names)
-        if len(logvars)>0:
-            print('The following features were log-transformed:', logvars)
-        elif len(logvars)==0:
-            print('None of the selected features was log-transformed.')
+        if self.verbose: 
+            print('The following features were selected:',  selected_feature_names)
+            if len(logvars)>0:
+                print('The following features were log-transformed:', logvars)
+            elif len(logvars)==0:
+                print('None of the selected features was log-transformed.')
             
         return selected_features, selected_feature_names, logvars_num, logvars
 
@@ -201,12 +261,12 @@ class FeatureSelector(object):
                 unselected_features[new_feature]=-1
                 old_performance=new_performance
             else:
-                print('The selected features have a', self.performance_metric, 'of:', old_performance)
+                if self.verbose: print('The selected features have a', self.performance_metric, 'of:', old_performance)
                 stop = True 
        
         # selected_feature_names = self.variable_names[selected_features]
         selected_feature_names = [self.variable_names[i] for i in selected_features]
-        print('The following features were selected:',  selected_feature_names)
+        if self.verbose: print('The following features were selected:',  selected_feature_names)
         
         return selected_features, selected_feature_names
 
@@ -281,7 +341,7 @@ class FeatureSelector(object):
         
         # Show best solution with fitness value
         varnams=[i for indx,i in enumerate(self.variable_names) if selected_features[indx]]
-        print('The following features have been selected:', varnams, 'with a', self.performance_metric, 'of', round(self.best_performance,2))
+        if self.verbose: print('The following features have been selected:', varnams, 'with a', self.performance_metric, 'of', round(self.best_performance,2))
         
         if self.nr_clus == None:
             optimal_number_clusters=self.best_solution[-1]
@@ -330,7 +390,9 @@ class FeatureSelector(object):
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'verbose' not in kwargs.keys(): kwargs['verbose'] = False
-                
+        if 'multiprocessing' not in kwargs.keys(): kwargs['multiprocessing'] = False
+
+                        
         # Split the data using the hold-out method in a training (default: 75%) 
         # and test set (default: 25%).
         ds = DataSplitter()
@@ -356,7 +418,9 @@ class FeatureSelector(object):
             antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
             what_to_drop = antecedent_estimator._info_for_simplification
 
-            # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
+            # Build a first-order Takagi-Sugeno model using Simpful using dummy 
+            # consequent parameters to calculate the firing strengths for each 
+            # data instance         
             fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names, **kwargs)
             firing_strengths = fsc.calculate_fire_strength(x_train)
             
@@ -388,9 +452,12 @@ class FeatureSelector(object):
         
         elif fs_number_of_folds>1:  ##### feauture selection with cross validation
             fold_indices = ds.kfold(data_length=np.shape(x_data)[0], number_of_folds=fs_number_of_folds)
-            # perf=[np.inf]*fs_number_of_folds
 
-            arg=[]
+            if kwargs['multiprocessing'] == True: 
+                arg=[]
+            else:
+                perf = np.zeros([1, fs_number_of_folds])
+    
             for fold_number in range(0, fs_number_of_folds):
                 
                 # Choose the indices for training and testing for this fold
@@ -403,143 +470,83 @@ class FeatureSelector(object):
                 y_train = np.array([y_data[i] for i in trn_idx])
                 y_val = np.array([y_data[i] for i in tst_idx]) 
                 
-                arg.append([x_train, y_train, x_val, y_val, nr_clus, var_names])
+                if kwargs['multiprocessing'] == True: 
+                    arg.append([x_train, y_train, x_val, y_val, nr_clus, var_names])
+                else:
+                    perf[:,fold_number]=self._create_model(x_train=x_train, y_train=y_train, x_test= x_val, y_test=y_val, nr_clus= self.nr_clus, var_names = self.variable_names, **kwargs)
             
-            try:
-                from multiprocessing import Pool
-            except ImportError:
-                    raise Exception('pyFUME uses multiprocessing to parallelize computations, but couldn`t find \'multiprocessing\'. Please pip install multiprocessing to proceed.')
-            
-            try:
-                with Pool(fs_number_of_folds) as p:
-                    perf=p.starmap(func=self._create_model, iterable=arg)
-            except RuntimeError:
-                raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info')
+            if kwargs['multiprocessing'] == True: 
+                try:
+                    from multiprocessing import Pool
+                except ImportError:
+                        raise Exception('pyFUME uses multiprocessing to parallelize computations, but couldn`t find \'multiprocessing\'. Please pip install multiprocessing to proceed.')
                 
-                # import os
-                # import signal
-                # os.kill(os.getppid(), signal.SIGTERM)
-                
+                try:
+                    with Pool(fs_number_of_folds) as p:
+                        perf=p.starmap(func=self._create_model, iterable=arg)
+                except RuntimeError:
+                    raise Exception('ERROR: main module was not safely imported. Feature selection exploits multiprocessing, so please add a `if _name_ == `_main_`: `-line to your main script. See https://docs.python.org/2/library/multiprocessing.html#windows for further info')
+                    
             performance = np.mean(perf)
-            
+                  
             return performance
 
-
-            #     # Cluster the training data (in input-output space)
-            #     cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)                               
-                
-            #     if kwargs['cluster_method'] == 'fcm':
-            #         cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
-            #             fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
-            #     elif kwargs['cluster_method'] == 'gk':
-            #         cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='gk')
-            #     elif kwargs['cluster_method'] == 'fstpso':
-            #         cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
-            #             fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
-            #             fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
-            #     else:
-            #         print('The requested clustering method is not (yet) implemented')
-                     
-            #     # Estimate the membership funtions of the system (default shape: gauss)
-            #     antecedent_estimator = AntecedentEstimator(x_train, partition_matrix)
-
-            #     antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
-            #     what_to_drop = antecedent_estimator._info_for_simplification
-
-            #     # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
-            #     fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names, **kwargs)
-            #     firing_strengths = fsc.calculate_fire_strength(x_train)
-
-            #     # Estimate the parameters of the consequent
-            #     ce = ConsequentEstimator(x_train, y_train, firing_strengths)
-            
-            #     if self.model_order=='first':
-            #         consequent_parameters = ce.suglms()
-            #     elif self.model_order== 'zero':
-            #         consequent_parameters = ce.zero_order()
-                    
-            #     # Build a first-order Takagi-Sugeno model using Simpful
-            #     simpbuilder = SugenoFISBuilder(
-            #         antecedent_parameters, 
-            #         consequent_parameters, 
-            #         var_names, 
-            #         extreme_values = antecedent_estimator._extreme_values,
-            #         operators=kwargs["operators"], 
-            #         model_order=self.model_order,
-            #         save_simpful_code=False, 
-            #         fuzzy_sets_to_drop=what_to_drop,
-            #         verbose=kwargs['verbose'])
-
-            #     model = simpbuilder.simpfulmodel
-                
-            #     # Test the model
-            #     test = SugenoFISTester(model=model, test_data=x_val, golden_standard=y_val,variable_names=var_names)
-            #     perf[fold_number]= test.calculate_performance(metric=self.performance_metric) 
-
-            # performance = np.mean(perf)
-
-        # return performance
    
     def _create_model(self, x_train, y_train, x_test, y_test, nr_clus, var_names, **kwargs):
-        # Cluster the training data (in input-output space)
-        cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)
-        cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm')                               
-                
-        # if kwargs['cluster_method'] == 'fcm':
-        #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
-        #         fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
-        # elif kwargs['cluster_method'] == 'gk':
-        #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='gk')
-        # elif kwargs['cluster_method'] == 'fstpso':
-        #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
-        #         fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
-        #         fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
-        # else:
-        #     print('The requested clustering method is not (yet) implemented')
-             
-        # # Estimate the membership funtions of the system (default shape: gauss)
-        antecedent_estimator = AntecedentEstimator(x_train, partition_matrix)
-        
-        antecedent_parameters = antecedent_estimator.determineMF()
-        #antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
-        what_to_drop = antecedent_estimator._info_for_simplification
-
-        # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
-        fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names)
-        firing_strengths = fsc.calculate_fire_strength(x_train)
-
-        # Estimate the parameters of the consequent
-        ce = ConsequentEstimator(x_train, y_train, firing_strengths)
-    
-        if self.model_order=='first':
-            consequent_parameters = ce.suglms()
-        elif self.model_order== 'zero':
-            consequent_parameters = ce.zero_order()
+        if np.size(x_train, axis = None) == 0 and self.performance_metrics == 'accuracy':
+            perf = 0
+        elif len(x_train) == 0:
+            perf = np.inf
+        else:
+            # Cluster the training data (in input-output space)
+            cl = Clusterer(x_train=x_train, y_train=y_train, nr_clus=nr_clus)
+            cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm')                               
+                    
+            # if kwargs['cluster_method'] == 'fcm':
+            #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fcm', fcm_m=kwargs['fcm_m'], 
+            #         fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
+            # elif kwargs['cluster_method'] == 'gk':
+            #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='gk')
+            # elif kwargs['cluster_method'] == 'fstpso':
+            #     cluster_centers, partition_matrix, _ = cl.cluster(cluster_method='fstpso', 
+            #         fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
+            #         fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
+            # else:
+            #     print('The requested clustering method is not (yet) implemented')
+                 
+            # # Estimate the membership funtions of the system (default shape: gauss)
+            antecedent_estimator = AntecedentEstimator(x_train, partition_matrix)
             
-        # Build a first-order Takagi-Sugeno model using Simpful
-        simpbuilder = SugenoFISBuilder(
-            antecedent_parameters, 
-            consequent_parameters, 
-            var_names, 
-            extreme_values = antecedent_estimator._extreme_values, 
-            model_order=self.model_order,
-            save_simpful_code=False, 
-            fuzzy_sets_to_drop=what_to_drop)
+            antecedent_parameters = antecedent_estimator.determineMF()
+            #antecedent_parameters = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=kwargs['merge_threshold'])
+            what_to_drop = antecedent_estimator._info_for_simplification
+    
+            # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
+            fsc=FireStrengthCalculator(antecedent_parameters, nr_clus, var_names)
+            firing_strengths = fsc.calculate_fire_strength(x_train)
+    
+            # Estimate the parameters of the consequent
+            ce = ConsequentEstimator(x_train, y_train, firing_strengths)
         
-        # simpbuilder = SugenoFISBuilder(
-        #     antecedent_parameters, 
-        #     consequent_parameters, 
-        #     var_names, 
-        #     extreme_values = antecedent_estimator._extreme_values,
-        #     operators=kwargs['operators'], 
-        #     model_order=self.model_order,
-        #     save_simpful_code=False, 
-        #     fuzzy_sets_to_drop=what_to_drop,
-        #     verbose=kwargs['verbose'])
-
-        model = simpbuilder.simpfulmodel
-        
-        # Test the model
-        test = SugenoFISTester(model=model, test_data=x_test, golden_standard=y_test, variable_names=var_names)
-        perf = test.calculate_performance(metric=self.performance_metric) 
+            if self.model_order=='first':
+                consequent_parameters = ce.suglms()
+            elif self.model_order== 'zero':
+                consequent_parameters = ce.zero_order()
+                
+            # Build a first-order Takagi-Sugeno model using Simpful
+            simpbuilder = SugenoFISBuilder(
+                antecedent_parameters, 
+                consequent_parameters, 
+                var_names, 
+                extreme_values = antecedent_estimator._extreme_values, 
+                model_order=self.model_order,
+                save_simpful_code=False, 
+                fuzzy_sets_to_drop=what_to_drop,
+                verbose=False)
+    
+            model = simpbuilder.simpfulmodel
+            
+            # Test the model
+            test = SugenoFISTester(model=model, test_data=x_test, golden_standard=y_test, variable_names=var_names)
+            perf = test.calculate_performance(metric=self.performance_metric) 
         return perf

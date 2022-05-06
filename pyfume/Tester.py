@@ -164,4 +164,66 @@ class SugenoFISTester(object):
         confusion_matrix['FN'] = np.sum(np.logical_and(discrete_ypred == 0, self._golden_standard == 1))
         return confusion_matrix
     
+    def calculate_AUC(self, number_of_slices=25, show_plot = False):
+        """
+        Calculates the area under the ROC curve (AUC) for models with binary output data.
+        
+        Args:
+            number_of_slices: More slices give a higher precision of the AUC, against the cost of higher computational costs.
+        
+        Returns:
+            AUC.
+        """
+        
+        ROC = np.array([])
+        for T in np.linspace(0,1,number_of_slices):
+            con_mat = self.generate_confusion_matrix(threshold = T) 
+            TPR = self.calculate_TPR(con_mat)
+            FPR = self.calculate_FPR(con_mat)
+            ROC=np.append(ROC, [FPR,TPR])
+        ROC = ROC.reshape(-1, 2)
+        
+        fpr, tpr = ROC[:, 0], ROC[:, 1]
+        AUC = 0
+        for k in range((number_of_slices-1)):
+                AUC = AUC + ((fpr[k]- fpr[k+1]) * tpr[k]) + ((1/2) * (tpr[k]- tpr[k+1]) * (fpr[k]- fpr[k+1]))
+        
+        if show_plot:
+            import matplotlib.pyplot as plt 
+            plt.figure(figsize=(16,8))
+            plt.scatter(ROC[:,0],ROC[:,1],s=100)
+            plt.plot([0, 1], [0, 1], ls = '--', c = 'darkgrey')
+            plt.title('ROC Curve with AUC = %.2f' %AUC)
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')        
+        
+        return AUC
+                
+        
+        
+    def calculate_TPR(self, confusion_matrix):
+        """
+        Calculates the true positive rate, given the confusion matrix for binary output data.
+        
+        Args:
+            confusion matrix: confusion matrix (dict) containing TP, FP, TN and FN.
+        
+        Returns:
+            True positive rate.
+        """
+        return confusion_matrix['TP'] / (confusion_matrix['TP'] + confusion_matrix['FN'])
+        
+    def calculate_FPR(self, confusion_matrix):
+        """
+        Calculates the false positive rate, given the confusion matrix for binary output data.
+        
+        Args:
+            confusion matrix: confusion matrix (dict) containing TP, FP, TN and FN.
+        
+        Returns:
+            False positive rate.
+        """
+        return confusion_matrix['FP'] / (confusion_matrix['FP'] + confusion_matrix['TN'])
+    
+    
     
