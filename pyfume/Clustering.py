@@ -575,7 +575,6 @@ class Clusterer(object):
             tmp1 = np.divide(1,d)
             tmp2 = np.ones([c,1])*sum(tmp1)
             U = np.divide(np.divide(1,d),tmp2)
-            print(U)
             
             # Update cluster centers V
             V = np.power(U,m)  

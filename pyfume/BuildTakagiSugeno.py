@@ -134,7 +134,7 @@ class BuildTSFIS(object):
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fstpso_max_iter'], **kwargs) 
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 self.x_test = self.x_test[:, self.selected_feature_indices]
                 
@@ -174,7 +174,7 @@ class BuildTSFIS(object):
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
             # Calculate the firing strengths
-            fsc=FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.variable_names,  **kwargs)
+            fsc=FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.selected_variable_names,  **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
   
             # Estimate the parameters of the consequent
@@ -318,7 +318,10 @@ class BuildTSFIS(object):
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper(raw_data = self.raw_x_train)
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus= fs.fst_pso_feature_selection(max_iter=kwargs['fstpso_max_iter'], **kwargs) 
+                else:
+                    raise Exception('Feature selection method not (yet) implemented.')
+                
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 
             elif kwargs['feature_selection'] == None:
@@ -356,7 +359,7 @@ class BuildTSFIS(object):
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
             # Calculate the firing strengths
-            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.variable_names, **kwargs)
+            fsc=FireStrengthCalculator(self.antecedent_parameters, self.nr_clus, self.selected_variable_names, **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
   
             # Estimate the parameters of the consequent
@@ -402,7 +405,6 @@ class BuildTSFIS(object):
         fold_dict['GRABS_threshold'] = merge_threshold
         fold_dict['nr_clus'] = self.nr_clus
         
-        
         if np.isnan(fold_dict['x_train']).any().any()== True:
             try:
                 from sklearn.impute import KNNImputer
@@ -411,13 +413,14 @@ class BuildTSFIS(object):
 
             if self.verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')   
             imputer = KNNImputer(n_neighbors=3, weights="uniform")
-            fold_dict['x_train']=imputer.fit_transform(fold_dict['x_train'])
+            tmp = imputer.fit_transform(fold_dict['x_train'])
+            fold_dict['x_train']= tmp
             fold_dict['x_test']=imputer.fit_transform(fold_dict['x_test'])
-        
+                
         if kwargs['oversampling'] == True:
             sample = Sampler(train_x = fold_dict['x_train'], train_y=fold_dict['y_train'], number_of_bins =  kwargs['sampling_number_of_bins'], histogram =  kwargs['sampling_histogram'])
             fold_dict['x_train'], fold_dict['y_train'] = sample.oversample()
-    
+        
         # Perform feature selection if requested
         if kwargs['feature_selection'] != None and kwargs['feature_selection'] != False:                    
             fs = FeatureSelector(fold_dict['x_train'], fold_dict['y_train'], self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
@@ -430,7 +433,7 @@ class BuildTSFIS(object):
                 raw_xdata = self.raw_x_train
                 fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['log_indices'], fold_dict['log_variable_names'] = fs.log_wrapper(raw_data = raw_xdata)
             elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['nr_clus']= fs.fst_pso_feature_selection(max_iter=kwargs['fs_max_iter']) 
+                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['nr_clus']= fs.fst_pso_feature_selection(max_iter=kwargs['fstpso_max_iter'], **kwargs) 
             
             tmp = fold_dict['x_train']
             idx = fold_dict['selected_feature_indices']
@@ -438,7 +441,7 @@ class BuildTSFIS(object):
             
             tmp = fold_dict['x_test']
             fold_dict['x_test'] = tmp[:, idx]
-
+        
         
         elif kwargs['feature_selection'] == None:
             fold_dict['selected_variable_names']= self.variable_names                    
@@ -453,9 +456,7 @@ class BuildTSFIS(object):
             fold_dict['log_x_train']= tmp
             cl = Clusterer(x_train=fold_dict['log_x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
         else:                
-            # Cluster the training data (in input-output space)
             cl = Clusterer(x_train=fold_dict['x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
-        
         
         if kwargs['cluster_method'] == 'fcm':
             fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
@@ -476,7 +477,7 @@ class BuildTSFIS(object):
 
         fold_dict['antecedent_parameters'] = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=fold_dict['GRABS_threshold'])
         fold_dict['what_to_drop'] = antecedent_estimator._info_for_simplification
-
+        
         # Calculate the firing strengths
         fsc=FireStrengthCalculator(antecedent_parameters=fold_dict['antecedent_parameters'], nr_clus=fold_dict['nr_clus'], variable_names=fold_dict['selected_variable_names'], **kwargs)
         fold_dict['firing_strengths'] = fsc.calculate_fire_strength(data=fold_dict['x_train'])

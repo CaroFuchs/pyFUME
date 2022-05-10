@@ -56,11 +56,11 @@ class FeatureSelector(object):
         x_logged_norm = (x_logged - np.nanmin(x_logged, axis =0)) / (np.nanmax(x_logged, axis =0)-np.nanmin(x_logged, axis =0))
 
         # Set initial values for the performance
-        if self.performance_metric != 'accuracy': 
+        if self.performance_metric != 'accuracy' and self.performance_metric !=  'AUC': 
             old_performance=np.inf
             new_performance=np.inf
             perfs=[]
-        elif self.performance_metric == 'accuracy':
+        elif self.performance_metric == 'accuracy' or self.performance_metric == 'AUC':
             old_performance=-np.inf
             new_performance=-np.inf
             perfs=[]
@@ -270,7 +270,7 @@ class FeatureSelector(object):
         
         return selected_features, selected_feature_names
 
-    def fst_pso_feature_selection(self,max_iter=100, min_clusters=2, max_clusters=10, performance_metric='MAE', **kwargs):
+    def fst_pso_feature_selection(self, max_iter=100, min_clusters=2, max_clusters=10, performance_metric='MAE', **kwargs):
         """
             Perform feature selection using the FST-PSO [1] variant of the Integer and Categorical 
             PSO (ICPSO) proposed by Strasser and colleagues [2]. ICPSO hybridizes PSO and Estimation of Distribution 
@@ -313,7 +313,7 @@ class FeatureSelector(object):
 
 
         FP = FuzzyPSO()
-        
+
         # Create the search space for feature selection with number of dimensions D
         D = np.size(self.dataX,1)
         
@@ -330,6 +330,10 @@ class FeatureSelector(object):
         args={'x_train': self.dataX, 'y_train': self.dataY, 'verbose':self.verbose}
         FP.set_fitness(self._function, arguments=args)
         
+        if 'fstpso_n_particles' not in kwargs.keys(): kwargs['fstpso_n_particles'] = None
+        elif kwargs['fstpso_n_particles'] != None:
+            FP.set_swarm_size(kwargs['fstpso_n_particles'])
+                
         # solve problem with FST-PSO
         _, self.best_performance, self.best_solution = FP.solve_with_fstpso(max_iter=max_iter,verbose=False)
         
@@ -390,7 +394,7 @@ class FeatureSelector(object):
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
         if 'global_fit' not in kwargs.keys(): kwargs['global_fit'] = False  
         if 'verbose' not in kwargs.keys(): kwargs['verbose'] = False
-        if 'multiprocessing' not in kwargs.keys(): kwargs['multiprocessing'] = False
+        if 'multiprocessing' not in kwargs.keys(): kwargs['multiprocessing'] = True
 
                         
         # Split the data using the hold-out method in a training (default: 75%) 
@@ -473,6 +477,7 @@ class FeatureSelector(object):
                 if kwargs['multiprocessing'] == True: 
                     arg.append([x_train, y_train, x_val, y_val, nr_clus, var_names])
                 else:
+                    print(x_train.shape)
                     perf[:,fold_number]=self._create_model(x_train=x_train, y_train=y_train, x_test= x_val, y_test=y_val, nr_clus= self.nr_clus, var_names = self.variable_names, **kwargs)
             
             if kwargs['multiprocessing'] == True: 

@@ -118,7 +118,7 @@ class SimpfulConverter(object):
     def _create_fuzzy_sets(self):
         
         j=0
-        chunk = ""
+        chunk = ""        
         
         for num_var, var in enumerate(self._input_variables):
 
@@ -131,8 +131,8 @@ class SimpfulConverter(object):
                 #if self.verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
                 
                 chunk += 'FS_%d = FuzzySet(' % (j+1)
-                term = 'cluster%d' % (cluster+1)
-                                                
+                term = 'cluster%d' % (cluster+1)  
+                
                 fstype, params = self._fuzzy_sets[j]
                 if fstype == 'gauss':
                     chunk += "function=Gaussian_MF(%f, %f), term='%s')" % (params[0], params[1], term) 

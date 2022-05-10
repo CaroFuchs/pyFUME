@@ -71,6 +71,8 @@ class SugenoFISTester(object):
             err=self.calculate_MAPE()
         elif metric == 'accuracy':
             err=self.calculate_accuracy()
+        elif metric == 'AUC':
+            err=self.calculate_AUC()
         else:
             print('The requested performance metric has not been implemented (yet).')
             
@@ -185,8 +187,8 @@ class SugenoFISTester(object):
         
         fpr, tpr = ROC[:, 0], ROC[:, 1]
         AUC = 0
-        for k in range((number_of_slices-1)):
-                AUC = AUC + ((fpr[k]- fpr[k+1]) * tpr[k]) + ((1/2) * (tpr[k]- tpr[k+1]) * (fpr[k]- fpr[k+1]))
+        for k in range(0,number_of_slices-1):
+            AUC = AUC + ((fpr[k]-fpr[k+1]) * tpr[k+1]) + ((1/2) * (fpr[k]- fpr[k+1]) * (tpr[k]- tpr[k+1]))
         
         if show_plot:
             import matplotlib.pyplot as plt 
