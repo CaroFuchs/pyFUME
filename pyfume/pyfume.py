@@ -340,7 +340,7 @@ class pyFUME(object):
         """
         self.get_model().produce_figure(outputfile=output_file, max_figures_per_row=figures_per_row)
     
-    def plot_consequent_parameters(self, rule_number, output_file=''):
+    def plot_consequent_parameters(self, rule_number, output_file='', set_title = True, set_legend = True, ax = None):
         """
         Plots the consequent coeffecients of a given rule in a bar chart. If 
         the training data was normalized, the coeffiecients are plotted as-is. 
@@ -352,7 +352,8 @@ class pyFUME(object):
             figures_per_row: The number of figures per row.
         """
         import matplotlib.pyplot as plt
-
+        from matplotlib.patches import Patch
+                
         # Start counting from 1 instead of 0
         rule_number=rule_number-1
         
@@ -389,31 +390,37 @@ class pyFUME(object):
         
         # Color the bars in the plot based on the relationship to the target variable
         cc=['colors']*len(parameters[:,rule_number])
-        color_labels= ["Negatively related to target variable", "Positively related to target variable"]
         for n,val in enumerate(parameters[:,rule_number]):
             if val<0:
                 cc[n]='firebrick'
             elif val>=0:
-                cc[n]='navy' 
+                cc[n]='navy'
+                
+        # Create the information for the legend
+        legend_elements = [Patch(facecolor='firebrick', label="Negatively related to target variable"),
+                           Patch(facecolor='navy', label="Positively related to target variable")]
         
         # Create the plot
-        fig, ax = plt.subplots(1,1)       
-        h = plt.barh(labels, np.abs(parameters[:,rule_number]), align='center', color = cc)
-        plt.grid(color='grey', linestyle='dotted', linewidth=1.5)
-        plt.gca().invert_yaxis()
+        ax.barh(labels, np.abs(parameters[:,rule_number]), align='center', color = cc)
+        ax.grid(color='grey', linestyle='dotted', linewidth=1.5)
+        ax.invert_yaxis()
         if self.FIS.minmax_norm_flag == False:
             fig_title = 'Standardized consequent parameters for rule ' + str(rule_number+1)
         elif self.FIS.minmax_norm_flag == True:
             fig_title = 'Consequent parameters for rule ' + str(rule_number+1)    
-        ax.set_title(fig_title)
-        plt.legend(h, color_labels)
-        fig.tight_layout()
+        if set_title== True: ax.set_title(fig_title);
+        if set_legend == True: ax.legend(handles=legend_elements)
+        # fig.tight_layout()
         
         # Save the plot if requested, otherwise just show the plot to the user
-        if output_file != "":
+        if ax != None:
+            return ax
+        elif output_file != "":
+            fig = ax.get_figure() 
             fig.savefig(output_file)
         else:
             plt.show()
+        
 
     def _denormalize_antecedent_set(self, data, normalization_values):
         """

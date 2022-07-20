@@ -21,8 +21,7 @@ class DataLoader(object):
     """
     
     def __init__(self, datapath=None, dataframe=None, process_categorical=False, 
-        variable_names=None, normalize=False, delimiter=',', verbose=True):
-
+        variable_names=None, normalize=False, delimiter=',', verbose=True, log_variables = None):
         # user specified a dataframe?
         if dataframe is not None:
             
@@ -56,7 +55,7 @@ class DataLoader(object):
             # Convert to matrix for pyFUME processing and 
             # store the names of the columns as variable names.
             self.data = new_data_frame.to_numpy()           
-            self.variable_names = list(new_data_frame.columns)[:-1]
+            self.variable_names = np.array(list(new_data_frame.columns)[:-1])
             
             if verbose:
                 print(" * Variable names:", self.variable_names)
@@ -80,7 +79,24 @@ class DataLoader(object):
         self.dataX=self.data[:,0:-1]
         self.dataY=self.data[:,-1]
 
+        if log_variables is not None:
+            if all(isinstance(e, (str)) for e in log_variables):
+                idx = []
+                for var in log_variables:
+                    i = np.argwhere(self.variable_names == var)[0][0]
+                    idx.append(i)   
+                log_variables = np.array(idx)
+
+            if all(isinstance(e, (int, np.integer)) for e in log_variables):
+            # log transform variables
+                for var in log_variables:
+                    self.dataX[var,:] = np.log(self.dataX[var,:])
+                if verbose: print('The following variables were log-transformed:', self.variable_names[log_variables])
+            else: raise TypeError("Please specify valid variable indices (as int) or variable names (as strings) for variables to log transform.")
+
+
         if normalize=='minmax' or normalize=='linear' or normalize==True:
+            if verbose: print('The data is normalized using min-max normalization.')
             self.raw_dataX=self.dataX.copy()
             
             mini=self.dataX.min(axis=0)
@@ -90,7 +106,12 @@ class DataLoader(object):
             self.dataX = (self.dataX - self.dataX.min(axis=0)) / (self.dataX.max(axis=0)-self.dataX.min(axis=0))
 
         elif normalize == 'zscore':
+            if verbose: print('The data is normalized using z-score normalization.')
             self.dataX = (self.dataX - self.dataX.mean(axis=0)) / self.dataX.std(axis=0)
+        else:
+            if verbose: print('The data will not be normalized.')
+            
+
             
 
     def _check_categorical(self, DF):

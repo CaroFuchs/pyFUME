@@ -477,7 +477,6 @@ class FeatureSelector(object):
                 if kwargs['multiprocessing'] == True: 
                     arg.append([x_train, y_train, x_val, y_val, nr_clus, var_names])
                 else:
-                    print(x_train.shape)
                     perf[:,fold_number]=self._create_model(x_train=x_train, y_train=y_train, x_test= x_val, y_test=y_val, nr_clus= self.nr_clus, var_names = self.variable_names, **kwargs)
             
             if kwargs['multiprocessing'] == True: 

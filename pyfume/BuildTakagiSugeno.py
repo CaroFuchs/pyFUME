@@ -38,6 +38,7 @@ class BuildTSFIS(object):
 
         # Check keyword-arguments and complete with default settings if necessary
         if 'model_order' not in kwargs.keys(): kwargs['model_order'] = 'first' 
+        if 'normalization' in kwargs.keys(): kwargs['normalize'] = kwargs['normalization']
         if 'normalize' not in kwargs.keys(): kwargs['normalize'] = False 
         if 'imputation' not in kwargs.keys(): kwargs['imputation'] = 'knn' # new
         if 'percentage_training' not in kwargs.keys(): kwargs['percentage_training'] = 0.75
@@ -67,6 +68,7 @@ class BuildTSFIS(object):
         if 'save_simpful_code' not in kwargs.keys(): kwargs['save_simpful_code'] = True
         if 'cv_randomID' not in kwargs.keys(): kwargs['cv_randomID'] = False
         if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
+        if 'log_variables' not in kwargs.keys(): kwargs['log_variables'] = None
 
 
         if self.nr_clus==None and kwargs['feature_selection'] == None:
@@ -74,12 +76,11 @@ class BuildTSFIS(object):
             import sys
             sys.exit()
           
-
         # Load the data
         if self.datapath is None:
-            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=self.verbose)
+            dl=DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables = kwargs['log_variables'], verbose=self.verbose)
         else:
-            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], verbose=self.verbose)
+            dl=DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables = kwargs['log_variables'], verbose=self.verbose)
         self.variable_names=dl.get_variable_names()
         
         if kwargs['normalize'] != False and kwargs['normalize'] != 'zscore':
@@ -161,6 +162,8 @@ class BuildTSFIS(object):
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fstpso', 
                     fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
                     fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
+            elif kwargs['cluster_method'] == 'fuzzy_k_protoypes' or kwargs['cluster_method'] == 'fkp' or kwargs['cluster_method'] == 'FKP':
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')            
             else: 
                 print('ERROR: Choose a valid clustering method.')
                 import sys

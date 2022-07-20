@@ -159,9 +159,14 @@ class Clusterer(object):
             try:
                 cat_ind = kwargs["categorical_indices"]
             except:
-                raise Exception('To utilize fuzzy K-prototypes clustering, the keyword "categorical_indices" should be specified.')
+                import pandas as pd
+                df = pd.DataFrame(self.data)
+                catvar = df.apply(pd.Series.nunique) == 2
+                if self._verbose: print('The following variables were recognized as being binaries, and are therefore treated as categorical variables for clustering: ', catvar[catvar ==True])
+                cat_ind =  np.where(catvar)[0]
+                # raise Exception('To utilize fuzzy K-prototypes clustering, the keyword "categorical_indices" should be specified.')
             
-            centers, partition_matrix, jm = self.fuzzy_k_protoypes(data = self.data, categorical_indices = cat_ind, n_clusters = self.nr_clus, m = self.m, max_iter = max_iter, error=error)          
+            centers, partition_matrix, jm = self._fuzzy_k_protoypes(data = self.data, categorical_indices = cat_ind, n_clusters = self.nr_clus, m = self.m, max_iter = max_iter, error=error)          
                     
         return centers, partition_matrix, jm
 
@@ -568,7 +573,7 @@ class Clusterer(object):
                 tmp1 = D@Vi.T
                 tmp2 = Vi@D@Vi.T/2
                 d[i,:]= tmp1 - tmp2
-                
+                print('d', np.min(d), np.max(d))    
             
             # Update the partition matrix U
             d = np.power(d,1/(m-1))
@@ -585,9 +590,11 @@ class Clusterer(object):
             
             # Update the step size
             stepSize=np.amax(abs(U-U0))
+            print('U', np.min(U), np.max(U))
+            print('U0', np.min(U0), np.max(U0))
 
             if self._verbose == True:
-                print('pyFUME just finished iteration '+ str(numIter) + ' of the RFCM clustering algoritm. The (maximum) difference between the previous and the newly computed partition matrix is' + str(stepSize) + '.')
+                print('pyFUME just finished iteration '+ str(numIter) + ' of the RFCM clustering algoritm.')
             
             numIter = numIter + 1;
         
