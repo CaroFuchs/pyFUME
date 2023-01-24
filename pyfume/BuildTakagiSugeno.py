@@ -350,7 +350,9 @@ class BuildTSFIS(object):
                 self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fstpso', 
                     fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
                     fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
-            else: 
+            elif kwargs['cluster_method'] == 'fuzzy_k_protoypes' or kwargs['cluster_method'] == 'fkp' or kwargs['cluster_method'] == 'FKP':
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')
+            else:
                 print('ERROR: Choose a valid clustering method.')
                 import sys
                 sys.exit()   
@@ -462,7 +464,7 @@ class BuildTSFIS(object):
             cl = Clusterer(x_train=fold_dict['x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
         
         if kwargs['cluster_method'] == 'fcm':
-            fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='fcm', fcm_m=kwargs['m'], 
+            fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='fcm', fcm_m=kwargs['m'],
                 fcm_maxiter=kwargs['fcm_maxiter'], fcm_error=kwargs['fcm_error'])
         elif kwargs['cluster_method'] == 'fst-pso':
             fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='fstpso', 
@@ -470,7 +472,9 @@ class BuildTSFIS(object):
                 fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
         elif kwargs['cluster_method'] == 'gk':
             fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='gk')
-        else: 
+        elif kwargs['cluster_method'] == 'fuzzy_k_protoypes' or kwargs['cluster_method'] == 'fkp' or kwargs['cluster_method'] == 'FKP':
+            self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')
+        else:
             print('ERROR: Choose a valid clustering method.')
             import sys
             sys.exit()    
