@@ -155,7 +155,7 @@ class SimpfulConverter(object):
                 j += 1
                 chunk += "\n"
                 # print(chunk)
-            if self._extreme_values == None:
+            if self._extreme_values is None:
                 chunk += "MF_%s = LinguisticVariable([%s], concept='%s')\n" % (var, ", ".join(subchunk), var)
             else:
                 chunk += "MF_%s = LinguisticVariable([%s], concept='%s' , universe_of_discourse=%s)\n" % (

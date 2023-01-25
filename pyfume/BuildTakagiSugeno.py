@@ -208,7 +208,7 @@ class BuildTSFIS(object):
             if 'kfold_indices' not in kwargs.keys(): kwargs['kfold_indices'] = None
             if 'paralellization_kfold' not in kwargs.keys(): kwargs['paralellization_kfold'] = False
 
-            #Create lists with test indices for each fold.
+            # Create lists with test indices for each fold.
             if kwargs['kfold_indices'] is None:
                 self.fold_indices = ds.kfold(data_length=len(self.dataX), number_of_folds=kwargs['number_of_folds'])
             else:
