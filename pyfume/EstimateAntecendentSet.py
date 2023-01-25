@@ -1,4 +1,5 @@
 import numpy as np
+from collections import Counter
 from simpful import SingletonsSet
 from scipy.optimize import curve_fit
 
@@ -49,8 +50,20 @@ class AntecedentEstimator(object):
         number_of_variables = self.xtrain.shape[1]
         for i in range(0, number_of_variables):
             if categorical_indices is not None and i in categorical_indices:
-                # TODO
-                pass
+                xin = self.xtrain[:, i]
+                cluster_frequencies_counter = [[] for _ in range(0, self.partition_matrix.shape[1])]
+                for j in range(0, self.partition_matrix.shape[0]):
+                    cl = np.argmax(self.partition_matrix[j, :])  # Determine the cluster the instance belongs to the most
+                    cluster_frequencies_counter[cl].append(xin[j])
+                singleton_parameters = []
+                for clf in cluster_frequencies_counter:
+                    total_number = len(clf)
+                    counter = Counter(clf)
+                    # k is the element of the universe of discourse and n / total_number is the membership function
+                    cl_freq = [(k, n / total_number) for k, n in counter.items()]
+                    singleton_parameters.append(cl_freq)
+                prm = ('singleton', singleton_parameters)
+                mf_list.append(prm)
             else:
                 xin = self.xtrain[:, i]
                 if all(y in (0, 1) for y in xin):  # Add noise to binary variables

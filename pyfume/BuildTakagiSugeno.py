@@ -70,6 +70,7 @@ class BuildTSFIS(object):
         if 'cv_randomID' not in kwargs.keys(): kwargs['cv_randomID'] = False
         if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
         if 'log_variables' not in kwargs.keys(): kwargs['log_variables'] = None
+        if 'categorical_indices' not in kwargs.keys(): kwargs['categorical_indices'] = None
 
         if self.nr_clus is None and kwargs['feature_selection'] is None:
             print('Error: please set pyFUME`s argument "nr_clus".')
@@ -170,7 +171,9 @@ class BuildTSFIS(object):
             # Estimate the membership funtions of the system (default shape: gauss)
             self._antecedent_estimator = AntecedentEstimator(x_train=self.x_train, partition_matrix=self.partition_matrix)
 
-            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
+            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'],
+                                                                                merge_threshold=merge_threshold,
+                                                                                categorical_indices=kwargs['categorical_indices'])
             what_to_drop = self._antecedent_estimator._info_for_simplification
 
             # Calculate the firing strengths
@@ -178,7 +181,8 @@ class BuildTSFIS(object):
             self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
 
             # Estimate the parameters of the consequent
-            ce = ConsequentEstimator(x_train=self.x_train, y_train=self.y_train, firing_strengths=self.firing_strengths)
+            ce = ConsequentEstimator(x_train=self.x_train, y_train=self.y_train, firing_strengths=self.firing_strengths,
+                                     categorical_indices=kwargs['categorical_indices'])
             if kwargs['model_order'] == 'first':
                 self.consequent_parameters = ce.suglms()
             elif kwargs['model_order'] == 'zero':
@@ -359,7 +363,9 @@ class BuildTSFIS(object):
             # Estimate the membership funtions of the system (default shape: gauss)
             self._antecedent_estimator = AntecedentEstimator(self.x_train, self.partition_matrix)
 
-            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
+            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'],
+                                                                                merge_threshold=merge_threshold,
+                                                                                categorical_indices=kwargs['categorical_indices'])
             what_to_drop = self._antecedent_estimator._info_for_simplification
 
             # Calculate the firing strengths
@@ -367,7 +373,8 @@ class BuildTSFIS(object):
             self.firing_strengths = fsc.calculate_fire_strength(self.x_train)
 
             # Estimate the parameters of the consequent
-            ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths)
+            ce = ConsequentEstimator(self.x_train, self.y_train, self.firing_strengths,
+                                     categorical_indices=kwargs['categorical_indices'])
             if kwargs['model_order'] == 'first':
                 self.consequent_parameters = ce.suglms()
             elif kwargs['model_order'] == 'zero':
@@ -398,7 +405,7 @@ class BuildTSFIS(object):
     def _create_kfold_model(self, fold_number, x_train, x_test, y_train, y_test, merge_threshold = 1.0, **kwargs):
 
         # Create a dictionary to keep track of settings and results
-        fold_dict= dict()
+        fold_dict = dict()
 
         fold_dict['fold_number'] = fold_number
         fold_dict['x_train'] = x_train
@@ -479,7 +486,9 @@ class BuildTSFIS(object):
         # Estimate the membership funtions of the system (default shape: gauss)
         antecedent_estimator = AntecedentEstimator(fold_dict['x_train'], fold_dict['partition_matrix'])
 
-        fold_dict['antecedent_parameters'] = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=fold_dict['GRABS_threshold'])
+        fold_dict['antecedent_parameters'] = antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'],
+                                                                              merge_threshold=fold_dict['GRABS_threshold'],
+                                                                              categorical_indices=kwargs['categorical_indices'])
         fold_dict['what_to_drop'] = antecedent_estimator._info_for_simplification
 
         # Calculate the firing strengths
@@ -487,7 +496,8 @@ class BuildTSFIS(object):
         fold_dict['firing_strengths'] = fsc.calculate_fire_strength(data=fold_dict['x_train'])
 
         # Estimate the parameters of the consequent
-        ce = ConsequentEstimator(fold_dict['x_train'], fold_dict['y_train'], fold_dict['firing_strengths'])
+        ce = ConsequentEstimator(fold_dict['x_train'], fold_dict['y_train'], fold_dict['firing_strengths'],
+                                 categorical_indices=kwargs['categorical_indices'])
         fold_dict['consequent_parameters'] = ce.suglms()
 
         # Build a first-order Takagi-Sugeno model using Simpful

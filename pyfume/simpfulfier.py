@@ -147,6 +147,10 @@ class SimpfulConverter(object):
 
                 elif fstype == 'invgauss':
                     chunk += "function=InvGaussian_MF(%f, %f), term='%s')" % (params[0], params[1], term)
+
+                elif fstype == 'singleton':
+                    chunk += f"function=Singletons_MF({params})"
+
                 else:
                     raise Exception("Fuzzy set type not supported," + fstype)
                 if (num_var, cluster) not in self._fuzzy_sets_to_drop:
