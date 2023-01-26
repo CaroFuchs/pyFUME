@@ -61,9 +61,8 @@ class AntecedentEstimator(object):
                     counter = Counter(clf)
                     # k is the element of the universe of discourse and n / total_number is the membership function
                     cl_freq = [(k, n / total_number) for k, n in counter.items()]
-                    singleton_parameters.append(cl_freq)
-                prm = ('singleton', singleton_parameters)
-                mf_list.append(prm)
+                    prm = ('singleton', cl_freq)
+                    mf_list.append(prm)
             else:
                 xin = self.xtrain[:, i]
                 if all(y in (0, 1) for y in xin):  # Add noise to binary variables
@@ -216,7 +215,7 @@ class AntecedentEstimator(object):
             mf[0] = 0
             mf[nc] = 0
 
-            # Determine the elements in the alpha cuts
+        # Determine the elements in the alpha cuts
         for i in range(0, nc):
             if np.any(mfin > acut[i]):
                 x[i] = np.min(xin[mfin > acut[i]])
@@ -237,8 +236,8 @@ class AntecedentEstimator(object):
 
         # Delete NaNs
         idx = np.isnan(x)
-        x = x[idx is False]
-        mf = mf[idx is False]
+        x = x[idx == False]
+        mf = mf[idx == False]
 
         # Sort vectors based on membership value (descending order)
         indmf = mf.argsort(axis=0)

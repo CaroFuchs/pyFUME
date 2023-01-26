@@ -82,7 +82,7 @@ class BuildTSFIS(object):
             dl = DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables=kwargs['log_variables'], verbose=self.verbose)
         else:
             dl = DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables=kwargs['log_variables'], verbose=self.verbose)
-        self.variable_names=dl.get_variable_names()
+        self.variable_names = dl.get_variable_names()
 
         if kwargs['normalize'] is not False and kwargs['normalize'] != 'zscore':
             self.normalization_values = list(dl.get_normalization_values())
@@ -126,8 +126,8 @@ class BuildTSFIS(object):
                 fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
 
                 # Keep copies of the training and test set before dropping unselected features
-                self.x_train_before_fs=self.x_train.copy()
-                self.x_test_before_fs=self.x_test.copy()
+                self.x_train_before_fs = self.x_train.copy()
+                self.x_test_before_fs = self.x_test.copy()
 
                 if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                     self.selected_feature_indices, self.variable_names = fs.wrapper()
@@ -162,7 +162,11 @@ class BuildTSFIS(object):
                     fstpso_n_particles=kwargs['fstpso_n_particles'], fstpso_max_iter=kwargs['fstpso_max_iter'],
                     fstpso_path_fit_dump=kwargs['fstpso_path_fit_dump'], fstpso_path_sol_dump=kwargs['fstpso_path_sol_dump'])
             elif kwargs['cluster_method'] == 'fuzzy_k_protoypes' or kwargs['cluster_method'] == 'fkp' or kwargs['cluster_method'] == 'FKP':
-                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')
+                if 'categorical_indices' in kwargs:
+                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp',
+                                                                                categorical_indices=kwargs['categorical_indices'])
+                else:
+                    self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')
             else:
                 print('ERROR: Choose a valid clustering method.')
                 import sys
@@ -177,7 +181,9 @@ class BuildTSFIS(object):
             what_to_drop = self._antecedent_estimator._info_for_simplification
 
             # Calculate the firing strengths
-            fsc = FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus, variable_names=self.selected_variable_names,  **kwargs)
+            fsc = FireStrengthCalculator(antecedent_parameters=self.antecedent_parameters, nr_clus=self.nr_clus,
+                                         variable_names=self.selected_variable_names,
+                                         **kwargs)
             self.firing_strengths = fsc.calculate_fire_strength(data=self.x_train)
 
             # Estimate the parameters of the consequent
@@ -200,7 +206,8 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"],
                 save_simpful_code=kwargs['save_simpful_code'],
-                fuzzy_sets_to_drop=what_to_drop, verbose=self.verbose)
+                fuzzy_sets_to_drop=what_to_drop, verbose=self.verbose,
+                categorical_indices=kwargs['categorical_indices'])
 
             self.model = simpbuilder.simpfulmodel
 
@@ -301,7 +308,7 @@ class BuildTSFIS(object):
                 if self.verbose: print('Warning: Your data contains missing values that will be imputed using KNN.')
 
                 imputer = KNNImputer(n_neighbors=3, weights="uniform")
-                self.x_train=imputer.fit_transform(self.x_train)
+                self.x_train = imputer.fit_transform(self.x_train)
 
             if kwargs['oversampling'] is True:
                 sample = Sampler(train_x=self.x_train, train_y=self.y_train, number_of_bins=kwargs['sampling_number_of_bins'], histogram=kwargs['sampling_histogram'])
@@ -310,13 +317,13 @@ class BuildTSFIS(object):
             # Perform feature selection if requested
             if kwargs['feature_selection'] is not None and kwargs['feature_selection'] is not False:
                 if 'performance_metric' not in kwargs.keys(): kwargs['performance_metric'] = 'MAE'
-                fs=FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order=kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
+                fs = FeatureSelector(self.x_train, self.y_train, self.nr_clus, self.variable_names, model_order=kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
 
                 # Keep copies of the training and test set before dropping unselected features
-                self.x_train_before_fs=self.x_train.copy()
+                self.x_train_before_fs = self.x_train.copy()
 
                 if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
-                    self.selected_feature_indices, self.variable_names=fs.wrapper()
+                    self.selected_feature_indices, self.variable_names = fs.wrapper()
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper(raw_data = self.raw_x_train)
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] is True:
@@ -334,7 +341,7 @@ class BuildTSFIS(object):
                 # Use log transformed variables if needed
                 self.log_x_train = self.x_train.copy()
                 for i in self.log_indices:
-                    self.log_x_train[i]= np.log(self.x_train[i])
+                    self.log_x_train[i] = np.log(self.x_train[i])
                 cl = Clusterer(x_train=self.log_x_train, y_train=self.y_train, nr_clus=self.nr_clus, verbose=self.verbose)
             else:
                 # Cluster the training data (in input-output space)
@@ -393,7 +400,8 @@ class BuildTSFIS(object):
                 operators=kwargs["operators"],
                 save_simpful_code=kwargs['save_simpful_code'],
                 fuzzy_sets_to_drop=what_to_drop,
-                verbose=self.verbose)
+                verbose=self.verbose,
+                categorical_indices=kwargs['categorical_indices'])
 
             self.model = simpbuilder.simpfulmodel
 
@@ -402,7 +410,7 @@ class BuildTSFIS(object):
             import sys
             sys.exit()
 
-    def _create_kfold_model(self, fold_number, x_train, x_test, y_train, y_test, merge_threshold = 1.0, **kwargs):
+    def _create_kfold_model(self, fold_number, x_train, x_test, y_train, y_test, merge_threshold=1.0, **kwargs):
 
         # Create a dictionary to keep track of settings and results
         fold_dict = dict()
@@ -434,8 +442,8 @@ class BuildTSFIS(object):
         # Perform feature selection if requested
         if kwargs['feature_selection'] is not None and kwargs['feature_selection'] is not False:
             fs = FeatureSelector(fold_dict['x_train'], fold_dict['y_train'], self.nr_clus, self.variable_names, model_order= kwargs['model_order'], performance_metric = kwargs['performance_metric'], verbose=self.verbose)
-            fold_dict['x_train_before_fs']=fold_dict['x_train'].copy()
-            fold_dict['x_test_before_fs']=fold_dict['x_test'].copy()
+            fold_dict['x_train_before_fs'] = fold_dict['x_train'].copy()
+            fold_dict['x_test_before_fs'] = fold_dict['x_test'].copy()
 
             if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
                 fold_dict['selected_feature_indices'], fold_dict['selected_variable_names']=fs.wrapper()
@@ -443,7 +451,7 @@ class BuildTSFIS(object):
                 raw_xdata = self.raw_x_train
                 fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['log_indices'], fold_dict['log_variable_names'] = fs.log_wrapper(raw_data = raw_xdata)
             elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] == True:
-                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['nr_clus']= fs.fst_pso_feature_selection(max_iter=kwargs['fstpso_max_iter'], **kwargs)
+                fold_dict['selected_feature_indices'], fold_dict['selected_variable_names'], fold_dict['nr_clus'] = fs.fst_pso_feature_selection(max_iter=kwargs['fstpso_max_iter'], **kwargs)
 
             tmp = fold_dict['x_train']
             idx = fold_dict['selected_feature_indices']
@@ -461,8 +469,8 @@ class BuildTSFIS(object):
             tmp = fold_dict['x_train'].copy()
             idx = fold_dict['log_indices']
             for i in idx:
-                tmp[i]= np.log(tmp[i])
-            fold_dict['log_x_train']= tmp
+                tmp[i] = np.log(tmp[i])
+            fold_dict['log_x_train'] = tmp
             cl = Clusterer(x_train=fold_dict['log_x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
         else:
             cl = Clusterer(x_train=fold_dict['x_train'], y_train=fold_dict['y_train'], nr_clus=fold_dict['nr_clus'], verbose=self.verbose)
@@ -477,7 +485,11 @@ class BuildTSFIS(object):
         elif kwargs['cluster_method'] == 'gk':
             fold_dict['cluster_centers'], fold_dict['partition_matrix'], _ = cl.cluster(method='gk')
         elif kwargs['cluster_method'] == 'fuzzy_k_protoypes' or kwargs['cluster_method'] == 'fkp' or kwargs['cluster_method'] == 'FKP':
-            self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')
+            if 'categorical_indices' in kwargs:
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp',
+                                                                            categorical_indices=kwargs['categorical_indices'])
+            else:
+                self.cluster_centers, self.partition_matrix, _ = cl.cluster(method='fkp')
         else:
             print('ERROR: Choose a valid clustering method.')
             import sys
@@ -492,7 +504,8 @@ class BuildTSFIS(object):
         fold_dict['what_to_drop'] = antecedent_estimator._info_for_simplification
 
         # Calculate the firing strengths
-        fsc=FireStrengthCalculator(antecedent_parameters=fold_dict['antecedent_parameters'], nr_clus=fold_dict['nr_clus'], variable_names=fold_dict['selected_variable_names'], **kwargs)
+        fsc = FireStrengthCalculator(antecedent_parameters=fold_dict['antecedent_parameters'],
+                                     nr_clus=fold_dict['nr_clus'], variable_names=fold_dict['selected_variable_names'], **kwargs)
         fold_dict['firing_strengths'] = fsc.calculate_fire_strength(data=fold_dict['x_train'])
 
         # Estimate the parameters of the consequent
@@ -507,26 +520,28 @@ class BuildTSFIS(object):
                 fold_dict['antecedent_parameters'],
                 fold_dict['consequent_parameters'],
                 fold_dict['selected_variable_names'],
-                normalization_values = self.normalization_values,
-                extreme_values = antecedent_estimator._extreme_values,
+                normalization_values=self.normalization_values,
+                extreme_values=antecedent_estimator._extreme_values,
                 operators=kwargs["operators"],
                 save_simpful_code='Fold_' + str(fold_number) + '_Simpful_code.py',
                 fuzzy_sets_to_drop=fold_dict['what_to_drop'],
-                verbose=False)
+                verbose=False,
+                categorical_indices=kwargs['categorical_indices'])
         elif kwargs['save_kfold_models'] is False:
             simpbuilder = SugenoFISBuilder(
                 fold_dict['antecedent_parameters'],
                 fold_dict['consequent_parameters'],
                 fold_dict['selected_variable_names'],
-                normalization_values = self.normalization_values,
-                extreme_values = antecedent_estimator._extreme_values,
+                normalization_values=self.normalization_values,
+                extreme_values=antecedent_estimator._extreme_values,
                 operators=kwargs["operators"],
                 save_simpful_code=False,
                 fuzzy_sets_to_drop=fold_dict['what_to_drop'],
-                verbose=False)
+                verbose=False,
+                categorical_indices=kwargs['categorical_indices'])
         fold_dict['model'] = simpbuilder.simpfulmodel
 
-        fold_dict['performance_metric'] =  self.performance_metric
-        tester = SugenoFISTester(model=fold_dict['model'], test_data=fold_dict['x_test'], variable_names=fold_dict['selected_variable_names'], golden_standard=fold_dict['y_test'] )
+        fold_dict['performance_metric'] = self.performance_metric
+        tester = SugenoFISTester(model=fold_dict['model'], test_data=fold_dict['x_test'], variable_names=fold_dict['selected_variable_names'], golden_standard=fold_dict['y_test'])
         fold_dict['performance'] = tester.calculate_performance(metric=fold_dict['performance_metric'])
         return fold_dict

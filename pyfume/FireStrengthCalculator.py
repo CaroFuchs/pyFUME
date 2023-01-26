@@ -16,7 +16,8 @@ class FireStrengthCalculator(object):
             **kwargs: Additional arguments to change settings of the fuzzy model.
     """
 
-    def __init__(self, antecedent_parameters, nr_clus, variable_names, fuzzy_sets_to_drop=None, **kwargs):
+    def __init__(self, antecedent_parameters, nr_clus, variable_names,
+                 fuzzy_sets_to_drop=None, **kwargs):
 
         self.antecedent_parameters = antecedent_parameters
         self.nr_clus = nr_clus
@@ -33,7 +34,8 @@ class FireStrengthCalculator(object):
             operators=kwargs["operators"],
             save_simpful_code=False,
             fuzzy_sets_to_drop=self.what_to_drop,
-            verbose=False)
+            verbose=False,
+            categorical_indices=kwargs['categorical_indices'])
 
         self.dummymodel = simpbuilder.simpfulmodel
 

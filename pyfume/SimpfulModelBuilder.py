@@ -23,7 +23,7 @@ class SugenoFISBuilder(object):
 
     def __init__(self, antecedent_sets, consequent_parameters,
                  variable_names, normalization_values=None, model_order='first', extreme_values=None, operators=None,
-                 save_simpful_code=True, fuzzy_sets_to_drop=None, verbose=True):
+                 save_simpful_code=True, fuzzy_sets_to_drop=None, verbose=True, categorical_indices=None):
         # super(SugenoFISBuilder, self).__init__()
         super().__init__()
 
@@ -42,7 +42,8 @@ class SugenoFISBuilder(object):
             extreme_values=extreme_values,
             model_order=model_order,
             fuzzy_sets_to_drop=fuzzy_sets_to_drop,
-            verbose=verbose)
+            verbose=verbose,
+            categorical_indices=categorical_indices)
 
         # save_simpful_code can be either True (save on default file), 
         # False (not not save anything), or a path to a file.

@@ -25,7 +25,8 @@ class SimpfulConverter(object):
                  fuzzy_sets_to_drop=None,
                  extreme_values=None,
                  operators=None,
-                 verbose=False):
+                 verbose=False,
+                 categorical_indices=None):
         super().__init__()
         self._input_variables = input_variables_names
         self._consequents_matrix = consequents_matrix
@@ -37,9 +38,13 @@ class SimpfulConverter(object):
         self.verbose = verbose
         if self._fuzzy_sets_to_drop is None:
             self._fuzzy_sets_to_drop = {}
+        self._categorical_indices = categorical_indices
 
         if self._model_order == 'first':
-            assert (len(self._input_variables) + 1 == len(self._consequents_matrix[0]))
+            if self._categorical_indices is not None:
+                assert (len(self._input_variables) + 1 == len(self._consequents_matrix[0])) - len(self._categorical_indices)
+            else:
+                assert (len(self._input_variables) + 1 == len(self._consequents_matrix[0]))
 
         if self.verbose: print(" * Detected %d rules / clusters" % self._clusters)
 
@@ -149,7 +154,7 @@ class SimpfulConverter(object):
                     chunk += "function=InvGaussian_MF(%f, %f), term='%s')" % (params[0], params[1], term)
 
                 elif fstype == 'singleton':
-                    chunk += f"function=Singletons_MF({params})"
+                    chunk += f"function=Singletons_MF({params}), term='{term}')"
 
                 else:
                     raise Exception("Fuzzy set type not supported," + fstype)
@@ -170,10 +175,16 @@ class SimpfulConverter(object):
 
     def _create_consequents(self):
         result = []
-        for row in self._consequents_matrix:
-            result.append(
-                ("+".join(["%e*%s" % (value, name) for (name, value) in zip(self._input_variables, row[:-1])])))
-            result[-1] += "+%e" % row[-1]
+        if self._categorical_indices is not None:
+            for row in self._consequents_matrix:
+                result.append(
+                    ("+".join(["%e*%s" % (value, name) for (name, value, idx) in zip(self._input_variables, row[:-1], range(0, len(self._input_variables))) if idx not in self._categorical_indices])))
+                result[-1] += "+%e" % row[-1]
+        else:
+            for row in self._consequents_matrix:
+                result.append(
+                    ("+".join(["%e*%s" % (value, name) for (name, value) in zip(self._input_variables, row[:-1])])))
+                result[-1] += "+%e" % row[-1]
         return result
 
     def _create_antecedents(self):
@@ -218,4 +229,3 @@ if __name__ == '__main__':
     SC.save_code("TEST.py")
     SC.generate_object()
     print(FS._mfs['pippo'])
-    a
