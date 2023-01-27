@@ -1,3 +1,5 @@
+import copy
+
 import simpful
 
 
@@ -176,15 +178,15 @@ class SimpfulConverter(object):
     def _create_consequents(self):
         result = []
         if self._categorical_indices is not None:
-            for row in self._consequents_matrix:
-                result.append(
-                    ("+".join(["%e*%s" % (value, name) for (name, value, idx) in zip(self._input_variables, row[:-1], range(0, len(self._input_variables))) if idx not in self._categorical_indices])))
-                result[-1] += "+%e" % row[-1]
+            # row[-1] contains the continuous variable, if categorical indices are used there are problems in the
+            # lengths of the lists to write the consequents, in this way they should be fixed
+            continuous_variables = [v for idx, v in enumerate(self._input_variables) if idx not in self._categorical_indices]
         else:
-            for row in self._consequents_matrix:
-                result.append(
-                    ("+".join(["%e*%s" % (value, name) for (name, value) in zip(self._input_variables, row[:-1])])))
-                result[-1] += "+%e" % row[-1]
+            continuous_variables = copy.deepcopy(self._input_variables)
+        for row in self._consequents_matrix:
+            result.append(
+                ("+".join(["%e*%s" % (value, name) for (name, value) in zip(continuous_variables, row[:-1])])))
+            result[-1] += "+%e" % row[-1]
         return result
 
     def _create_antecedents(self):
