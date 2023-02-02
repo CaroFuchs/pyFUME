@@ -8,6 +8,8 @@ class DataSplitter(object):
             training and test for model validation.
     """
 
+    def __init__(self, seed=None):
+        random.seed(seed)
     #    def __init__(self):#, dataX, dataY):
     #        self.data=np.loadtxt(datapath,delimiter=',')
     #        self.dataX=self.data[:,0:-1]
