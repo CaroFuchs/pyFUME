@@ -55,12 +55,14 @@ class AntecedentEstimator(object):
                 for j in range(0, self.partition_matrix.shape[0]):
                     cl = np.argmax(self.partition_matrix[j, :])  # Determine the cluster the instance belongs to the most
                     cluster_frequencies_counter[cl].append(xin[j])
-                singleton_parameters = []
                 for clf in cluster_frequencies_counter:
                     total_number = len(clf)
                     counter = Counter(clf)
                     # k is the element of the universe of discourse and n / total_number is the membership function
                     cl_freq = [(k, n / total_number) for k, n in counter.items()]
+                    # If most frequent insingleton should have membership function equal to 1
+                    # _, max_idx = np.argmax(cl_freq, axis=0)
+                    # cl_freq[max_idx] = (cl_freq[max_idx][0], 1)
                     prm = ('singleton', cl_freq)
                     mf_list.append(prm)
             else:
