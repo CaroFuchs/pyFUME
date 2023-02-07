@@ -42,14 +42,14 @@ class DataLoader(object):
                 new_data_frame = new_data_frame[
                     [col for col in new_data_frame.columns if col != output_name] + [output_name]]
 
-            else:
-                list_categorical = self._check_categorical(dataframe)
-                if verbose:
-                    print(" * Dropping categorical data.")
-                    print("   Detected categorical variables:", list_categorical)
-
-                for cat in list_categorical:
-                    new_data_frame = new_data_frame.drop(cat, axis=1)
+            # else:
+            #     list_categorical = self._check_categorical(dataframe)
+            #     if verbose:
+            #         print(" * Dropping categorical data.")
+            #         print("   Detected categorical variables:", list_categorical)
+            #
+            #     for cat in list_categorical:
+            #         new_data_frame = new_data_frame.drop(cat, axis=1)
 
             # DEBUG
             new_data_frame.to_csv("__new_dataset.csv", index=False)
