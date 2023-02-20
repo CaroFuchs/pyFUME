@@ -156,7 +156,7 @@ class pyFUME(object):
         Returns:
             Normalized values.
         """
-        if self.FIS.minmax_norm_flag == True:
+        if self.FIS.minmax_norm_flag is True:
             if np.amin(data) < 0 or np.amax(data) > 1:
                 print(
                     'WARNING: The given value(s) are not between 0 and 1, the denormalization is performed by extrapolating.')
@@ -165,7 +165,7 @@ class pyFUME(object):
             variable_names, min_values, max_values = zip(*norm_val)
             # print(min_values, max_values)
             denormalized_data = (data * (np.array(max_values) - np.array(min_values))) + np.array(min_values)
-        elif self.FIS.minmax_norm_flag == False:
+        elif not self.FIS.minmax_norm_flag:
             raise Exception('The model was not trained on normalized data, normalization is aborted.')
 
         return denormalized_data
@@ -469,7 +469,7 @@ class pyFUME(object):
         normalization_values = self.FIS.normalization_values
         antecedent_sets = self.FIS.antecedent_parameters
 
-        if normalization_values == None:
+        if normalization_values is None:
             raise Exception(
                 'ERROR: The input data for the pyFUME model was not normalized during training. Denormaliztaion is therefore not possible.')
 

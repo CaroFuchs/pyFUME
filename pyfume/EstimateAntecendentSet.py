@@ -52,18 +52,34 @@ class AntecedentEstimator(object):
             if categorical_indices is not None and i in categorical_indices:
                 xin = self.xtrain[:, i]
                 cluster_frequencies_counter = [[] for _ in range(0, self.partition_matrix.shape[1])]
+                unique_values = set()
                 for j in range(0, self.partition_matrix.shape[0]):
                     cl = np.argmax(self.partition_matrix[j, :])  # Determine the cluster the instance belongs to the most
+                    unique_values.add(xin[j])
                     cluster_frequencies_counter[cl].append(xin[j])
-                for clf in cluster_frequencies_counter:
+                cluster_frequencies = {}
+                value_frequencies = {k: [] for k in unique_values}  # used to force the sum for each variable to 1
+                for j, clf in enumerate(cluster_frequencies_counter):
                     total_number = len(clf)
                     counter = Counter(clf)
                     # k is the element of the universe of discourse and n / total_number is the membership function
-                    cl_freq = [(k, n / total_number) for k, n in counter.items()]
-                    # If most frequent insingleton should have membership function equal to 1
-                    # _, max_idx = np.argmax(cl_freq, axis=0)
-                    # cl_freq[max_idx] = (cl_freq[max_idx][0], 1)
-                    prm = ('singleton', cl_freq)
+                    tmp_dict = {}
+                    for k, n in counter.items():
+                        freq = n / total_number
+                        tmp_dict[k] = freq
+                        cluster_frequencies[j] = tmp_dict
+                        value_frequencies[k].append(freq)
+                # Force sum to 1 for each value of the categorical feature
+                # Computing the total sum for each value
+                total_sums = {k: sum(value_frequencies[k]) for k in unique_values}
+                for j in cluster_frequencies:
+                    mfs = []
+                    for k in unique_values:
+                        if k in cluster_frequencies[j]:
+                            mfs.append((k, cluster_frequencies[j][k] / total_sums[k]))
+                        else:
+                            mfs.append((k, 0.0))
+                    prm = ('singleton', mfs)
                     mf_list.append(prm)
             else:
                 xin = self.xtrain[:, i]
