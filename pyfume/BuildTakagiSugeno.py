@@ -28,7 +28,7 @@ class BuildTSFIS(object):
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
     def __init__(self, datapath=None, dataframe=None, nr_clus=None, variable_names=None, 
-            process_categorical=False, merge_threshold=1.0, verbose = False, **kwargs):
+            process_categorical=False, merge_threshold=1.0, setnes_threshold=1.0, verbose = False, **kwargs):
 
         self.datapath = datapath
         self.nr_clus = nr_clus
@@ -173,7 +173,7 @@ class BuildTSFIS(object):
             # Estimate the membership funtions of the system (default shape: gauss)
             self._antecedent_estimator = AntecedentEstimator(x_train=self.x_train, partition_matrix=self.partition_matrix)
     
-            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold)
+            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold, setnes_threshold=setnes_threshold)
             what_to_drop = self._antecedent_estimator._info_for_simplification
             
             # Calculate the firing strengths
