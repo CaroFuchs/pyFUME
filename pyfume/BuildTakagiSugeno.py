@@ -199,7 +199,9 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"], 
                 save_simpful_code=kwargs['save_simpful_code'], 
-                fuzzy_sets_to_drop=what_to_drop, verbose=self.verbose)
+                fuzzy_sets_to_drop=what_to_drop, 
+                setnes_dropped_antecedents=self._antecedent_estimator._setnes_removed_sets,
+                verbose=self.verbose)
     
             self.model = simpbuilder.simpfulmodel
             

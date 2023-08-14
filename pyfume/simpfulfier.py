@@ -22,6 +22,7 @@ class SimpfulConverter(object):
             fuzzy_sets,
             model_order = 'first',
             fuzzy_sets_to_drop = None,
+            setnes_dropped_antecedents = None,
             extreme_values = None,
             operators = None,
             verbose = False):
@@ -32,10 +33,14 @@ class SimpfulConverter(object):
         self._fuzzy_sets = fuzzy_sets
         self._model_order = model_order
         self._fuzzy_sets_to_drop = fuzzy_sets_to_drop
+        self._setnes_dropped_antecedents = setnes_dropped_antecedents
         self._extreme_values = extreme_values
         self.verbose = verbose
         if self._fuzzy_sets_to_drop==None:
             self._fuzzy_sets_to_drop={}
+
+        if self._setnes_dropped_antecedents is None:
+            self._setnes_dropped_antecedents = []
 
         if self._model_order == 'first':  
             assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
@@ -169,6 +174,9 @@ class SimpfulConverter(object):
         return result
 
     def _create_antecedents(self):
+        """ Creates the 'text' for the antecedents of rules. All rules are created here,
+            one for each cluster. This is where antecedents dropped with Setnes' method
+            should be canceled. """
 
         result = []
 
@@ -176,7 +184,15 @@ class SimpfulConverter(object):
             
             pieces = []
             for j, var in enumerate(self._input_variables):
+
+                # SETNES
+                if (j,i) in self._setnes_dropped_antecedents: 
+                    print(" * Dropping cluster%d from variable %s due to Setnes' method." %(i, var) )
+                    continue # experimental
+
                 value = "cluster%d"% (i + 1)
+
+                # GRABS
                 if (j,i) in self._fuzzy_sets_to_drop.keys():
                     value = "cluster%d" % (self._fuzzy_sets_to_drop[(j, i)] + 1)
                 pieces.append("(%s IS %s)" % (var, value)) 
