@@ -40,7 +40,7 @@ class SimpfulConverter(object):
             self._fuzzy_sets_to_drop={}
 
         if self._setnes_dropped_antecedents is None:
-            self._setnes_dropped_antecedents = []
+            self._setnes_dropped_antecedents = {}
 
         if self._model_order == 'first':  
             assert(len(self._input_variables)+1 == len(self._consequents_matrix[0]))
@@ -133,6 +133,14 @@ class SimpfulConverter(object):
                 if (num_var, cluster) in self._fuzzy_sets_to_drop:
                     chunk+="# "
 
+                try:
+                    if cluster in self._setnes_dropped_antecedents[num_var]: 
+                        print(" * Dropping cluster%d from variable %s due to Setnes' method." %(cluster, var) )
+                        chunk+="# "
+                except KeyError:
+                    pass
+
+
                 #if self.verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
                 
                 chunk += 'FS_%d = FuzzySet(' % (j+1)
@@ -152,9 +160,15 @@ class SimpfulConverter(object):
                     chunk += "function=InvGaussian_MF(%f, %f), term='%s')" % (params[0], params[1], term) 
                 else:
                     raise Exception("Fuzzy set type not supported,"+fstype)
+                
+                # first check GRABS
                 if (num_var, cluster) not in self._fuzzy_sets_to_drop:
-                    subchunk.append("FS_%d" % (j+1))
-                #print ( self._fuzzy_sets[j] )
+                    # also check Setnes
+                        res_setnets = self._setnes_dropped_antecedents.get(num_var, [])
+                        if cluster not in res_setnets: 
+                            # finally can append
+                            subchunk.append("FS_%d" % (j+1))
+                
                 j += 1
                 chunk += "\n"
                 # print(chunk)
@@ -186,9 +200,13 @@ class SimpfulConverter(object):
             for j, var in enumerate(self._input_variables):
 
                 # SETNES
-                if (j,i) in self._setnes_dropped_antecedents: 
-                    print(" * Dropping cluster%d from variable %s due to Setnes' method." %(i, var) )
-                    continue # experimental
+                try:
+                    if i in self._setnes_dropped_antecedents[j]: 
+                    #if (j,i) in self._setnes_dropped_antecedents: 
+                        print(" * Dropping cluster%d from variable %s in antecedent due to Setnes' method." %(i, var) )
+                        continue # experimental
+                except KeyError:
+                    pass
 
                 value = "cluster%d"% (i + 1)
 

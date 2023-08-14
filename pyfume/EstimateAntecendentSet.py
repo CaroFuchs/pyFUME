@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from numpy import linspace, array
+from collections import defaultdict
 
 def is_complete(G):
     nodelist = G.nodes
@@ -23,7 +24,7 @@ class AntecedentEstimator(object):
         self.partition_matrix = partition_matrix
         self._info_for_simplification = None
         self._calculate_all_extreme_values()
-        self._setnes_removed_sets = []
+        self._setnes_removed_sets = defaultdict(list)
                         
         
     def determineMF(self, mf_shape='gauss', merge_threshold=1.0, setnes_threshold=1.0):
@@ -152,7 +153,7 @@ class AntecedentEstimator(object):
                         jaccardsim = (intersection/union)
 
                         if jaccardsim>setnes_threshold:
-                            self._setnes_removed_sets.append((v,c1))
+                            self._setnes_removed_sets[v].append(c1)
                             print (" * Variable %d, cluster %d is too similar to universal set (threshold: %.2f): marked for removal" % (v,c1+1,setnes_threshold))
 
                     else:
@@ -186,7 +187,7 @@ class AntecedentEstimator(object):
         print (" * %d antecedent clauses will be simplified using a threshold %.2f" % (dropped_stuff, threshold))
         if verbose: 
             print(" * GRABS remapping info:", self._info_for_simplification)
-            print(" * Setnes simplification (var, set):", self._setnes_removed_sets)
+            print(" * Setnes simplification dictionary variable ==> list of clusters/fuzzy sets to be removed:", self._setnes_removed_sets)
 
         self._info_for_simplification
 
