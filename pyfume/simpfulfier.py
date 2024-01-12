@@ -25,6 +25,7 @@ class SimpfulConverter(object):
                  fuzzy_sets,
                  model_order='first',
                  fuzzy_sets_to_drop=None,
+                 setnes_dropped_antecedents = None,
                  extreme_values=None,
                  operators=None,
                  verbose=False,
@@ -36,11 +37,15 @@ class SimpfulConverter(object):
         self._fuzzy_sets = fuzzy_sets
         self._model_order = model_order
         self._fuzzy_sets_to_drop = fuzzy_sets_to_drop
+        self._setnes_dropped_antecedents = setnes_dropped_antecedents
         self._extreme_values = extreme_values
         self.verbose = verbose
         if self._fuzzy_sets_to_drop is None:
             self._fuzzy_sets_to_drop = {}
         self._categorical_indices = categorical_indices
+
+        if self._setnes_dropped_antecedents is None:
+            self._setnes_dropped_antecedents = {}
 
         if self._model_order == 'first':
             if self._categorical_indices is not None:
@@ -136,6 +141,14 @@ class SimpfulConverter(object):
                 if (num_var, cluster) in self._fuzzy_sets_to_drop:
                     chunk += "# "
 
+                try:
+                    if cluster in self._setnes_dropped_antecedents[num_var]:
+                        print(" * Dropping cluster%d from variable %s due to Setnes' method." %(cluster, var) )
+                        chunk+="# "
+                except KeyError:
+                    pass
+
+
                 # if self.verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
 
                 chunk += 'FS_%d = FuzzySet(' % (j + 1)
@@ -160,8 +173,14 @@ class SimpfulConverter(object):
 
                 else:
                     raise Exception("Fuzzy set type not supported," + fstype)
+
+                # first check GRABS
                 if (num_var, cluster) not in self._fuzzy_sets_to_drop:
-                    subchunk.append("FS_%d" % (j + 1))
+                    # also check Setnes
+                        res_setnets = self._setnes_dropped_antecedents.get(num_var, [])
+                        if cluster not in res_setnets:
+                            # finally can append
+                            subchunk.append("FS_%d" % (j + 1))
                 # print ( self._fuzzy_sets[j] )
                 j += 1
                 chunk += "\n"
@@ -190,6 +209,9 @@ class SimpfulConverter(object):
         return result
 
     def _create_antecedents(self):
+        """ Creates the 'text' for the antecedents of rules. All rules are created here,
+            one for each cluster. This is where antecedents dropped with Setnes' method
+            should be canceled. """
 
         result = []
 
@@ -197,7 +219,19 @@ class SimpfulConverter(object):
 
             pieces = []
             for j, var in enumerate(self._input_variables):
+
+                # SETNES
+                try:
+                    if i in self._setnes_dropped_antecedents[j]:
+                    #if (j,i) in self._setnes_dropped_antecedents:
+                        print(" * Dropping cluster%d from variable %s in antecedent due to Setnes' method." %(i, var) )
+                        continue # experimental
+                except KeyError:
+                    pass
+
                 value = "cluster%d" % (i + 1)
+
+                # GRABS
                 if (j, i) in self._fuzzy_sets_to_drop.keys():
                     value = "cluster%d" % (self._fuzzy_sets_to_drop[(j, i)] + 1)
                 pieces.append("(%s IS %s)" % (var, value))

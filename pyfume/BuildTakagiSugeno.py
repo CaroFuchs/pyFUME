@@ -28,8 +28,8 @@ class BuildTSFIS(object):
         Returns:
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
-    def __init__(self, datapath=None, dataframe=None, nr_clus=None, variable_names=None,
-                 process_categorical=False, merge_threshold=1.0, verbose=False, **kwargs):
+    def __init__(self, datapath=None, dataframe=None, nr_clus=None, variable_names=None, 
+            process_categorical=False, merge_threshold=1.0, setnes_threshold=1.0, verbose = False, **kwargs):
 
         self.datapath = datapath
         self.nr_clus = nr_clus
@@ -174,10 +174,8 @@ class BuildTSFIS(object):
 
             # Estimate the membership funtions of the system (default shape: gauss)
             self._antecedent_estimator = AntecedentEstimator(x_train=self.x_train, partition_matrix=self.partition_matrix)
-
-            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'],
-                                                                                merge_threshold=merge_threshold,
-                                                                                categorical_indices=kwargs['categorical_indices'])
+    
+            self.antecedent_parameters = self._antecedent_estimator.determineMF(mf_shape=kwargs['mf_shape'], merge_threshold=merge_threshold, setnes_threshold=setnes_threshold, categorical_indices=kwargs['categorical_indices'])
             what_to_drop = self._antecedent_estimator._info_for_simplification
 
             # Calculate the firing strengths
@@ -206,7 +204,9 @@ class BuildTSFIS(object):
                 model_order=kwargs["model_order"],
                 operators=kwargs["operators"],
                 save_simpful_code=kwargs['save_simpful_code'],
-                fuzzy_sets_to_drop=what_to_drop, verbose=self.verbose,
+                fuzzy_sets_to_drop=what_to_drop,
+                setnes_dropped_antecedents=self._antecedent_estimator._setnes_removed_sets,
+                verbose=self.verbose,
                 categorical_indices=kwargs['categorical_indices'])
 
             self.model = simpbuilder.simpfulmodel

@@ -2,6 +2,8 @@ import numpy as np
 from collections import Counter
 from simpful import SingletonsSet
 from scipy.optimize import curve_fit
+from numpy import linspace, array
+from collections import defaultdict
 
 
 def is_complete(G):
@@ -26,8 +28,9 @@ class AntecedentEstimator(object):
         self.partition_matrix = partition_matrix
         self._info_for_simplification = None
         self._calculate_all_extreme_values()
+        self._setnes_removed_sets = defaultdict(list)
 
-    def determineMF(self, mf_shape='gauss', merge_threshold=1.0, categorical_indices=None):
+    def determineMF(self, mf_shape='gauss', merge_threshold=1.0, categorical_indices=None, setnes_threshold=1.0):
         """
             Estimates the parameters of the membership functions that are used 
             as antecedents of the fuzzy rules.
@@ -93,8 +96,8 @@ class AntecedentEstimator(object):
                     prm = self._fitMF(x=xx, mf=mf, mf_shape=mf_shape)
                     mf_list.append(prm)
 
-        if merge_threshold < 1.0:
-            self._check_similarities(mf_list, number_of_variables, threshold=merge_threshold)
+        if merge_threshold < 1.0 or setnes_threshold < 1.0:
+            self._check_similarities(mf_list, number_of_variables, threshold=merge_threshold, setnes_threshold=setnes_threshold)
 
         # print(self._info_for_simplification)
 
@@ -113,7 +116,11 @@ class AntecedentEstimator(object):
         self._extreme_values = [self._extreme_values_for_variable(v) for v in range(num_variables)]
 
     def _check_similarities(self, mf_list, number_of_variables,
-                            threshold=1., approx_points=100):
+            approx_points=100,
+            threshold=1.,
+            setnes_threshold=1.,
+            verbose=True
+            ):
 
         number_of_clusters = len(mf_list) // number_of_variables
 
@@ -130,6 +137,9 @@ class AntecedentEstimator(object):
         """
 
         for v in range(number_of_variables):
+
+            if verbose:
+                print(" * Trying to simplify variable", v)
 
             mi, ma = self._extreme_values_for_variable(v)
             points = np.linspace(mi, ma, approx_points)
@@ -162,8 +172,34 @@ class AntecedentEstimator(object):
                     else:
                         raise Exception("Not implemented yet")
 
-        # for k,v in things_to_be_removed.items():            print (k, v)
-        # exit()
+                # Setnes' rule simplification: detect which sets are similar to the universal set
+                #                              using Jaccard similarity and a threshold.
+                if setnes_threshold<1.:
+
+                    index1 = v*number_of_clusters + c1
+                    funname1, params1 = mf_list[index1]
+
+                    if funname1== "gauss":
+
+                        first_cluster = array([self._gaussmf(x, params1[0], params1[1]) for x in points])
+                        second_cluster = array([1 for x in points]) # universal set
+
+                        intersection = sum([min(x,y) for x,y in zip(first_cluster, second_cluster)])
+                        union        = sum([max(x,y) for x,y in zip(first_cluster, second_cluster)])
+
+                        jaccardsim = (intersection/union)
+
+                        if jaccardsim>setnes_threshold:
+                            self._setnes_removed_sets[v].append(c1)
+                            print (" * Variable %d, cluster %d is too similar to universal set (threshold: %.2f): marked for removal" % (v,c1+1,setnes_threshold))
+
+                    else:
+                        raise Exception("Setnes' simplification for non-Gaussian functions not implemented yet")
+
+
+
+        #for k,v in things_to_be_removed.items():            print (k, v)
+        #exit()
         """
             This function must return a dictionary of items like:
             (variable, cluster) -> mapped_cluster
@@ -185,7 +221,11 @@ class AntecedentEstimator(object):
                             self._info_for_simplification[(var_num, el)] = retained
 
         dropped_stuff = self.get_number_of_dropped_fuzzy_sets()
-        print(" * %d antecedent clauses will be simplified using a threshold %.2f" % (dropped_stuff, threshold))
+        print (" * %d antecedent clauses will be simplified using a threshold %.2f" % (dropped_stuff, threshold))
+        if verbose:
+            print(" * GRABS remapping info:", self._info_for_simplification)
+            print(" * Setnes simplification dictionary variable ==> list of clusters/fuzzy sets to be removed:", self._setnes_removed_sets)
+
         self._info_for_simplification
 
     def get_number_of_dropped_fuzzy_sets(self):

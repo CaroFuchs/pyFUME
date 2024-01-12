@@ -26,15 +26,21 @@ class pyFUME(object):
             method: At this moment, only Takagi Sugeno models are supported (default = 'Takagi-Sugeno')
             variable_names: Names of the variables, if not specified the names will be read from the first row of the csv file (default = None).
             merge_threshold: Threshold for GRABS to drop fuzzy sets from the model. If the jaccard similarity between two sets is higher than this threshold, the fuzzy set will be dropped from the model.
+            remove_flat_threshold: Threshold for FlaMeR to drop fuzzy sets with constant membership from the antecedents. It uses the coefficient of variation (sigma/mu) of the Gaussian MF to estimate the "flatness" of the variable.
             **kwargs: Additional arguments to change settings of the fuzzy model.
 
         Returns:
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
-
-    def __init__(self, datapath=None, dataframe=None, nr_clus=2, process_categorical=False, method='Takagi-Sugeno',
-                 variable_names=None, merge_threshold=1., **kwargs):
-
+    def __init__(self, datapath=None, dataframe=None,
+        nr_clus=2, process_categorical=False,
+        method='Takagi-Sugeno',
+        variable_names=None,
+        merge_threshold=1.,
+        remove_flat_threshold=None,
+        setnes_threshold=0.8,
+        **kwargs):
+      
         if datapath is None and dataframe is None:
             raise Exception(
                 "ERROR: a dataset was not specified. Please either use the datapath or dataframe arguments.")
@@ -50,14 +56,10 @@ class pyFUME(object):
 
         if method == 'Takagi-Sugeno' or method == 'Sugeno':
             if datapath is not None:
-                self.FIS = BuildTSFIS(datapath=self.datapath, nr_clus=self.nr_clus, variable_names=variable_names,
-                                      process_categorical=process_categorical, merge_threshold=merge_threshold,
-                                      **kwargs)
+                self.FIS = BuildTSFIS(datapath=self.datapath, nr_clus=self.nr_clus, variable_names=variable_names, process_categorical=process_categorical, merge_threshold=merge_threshold, setnes_threshold=setnes_threshold, **kwargs)
             else:
-                self.FIS = BuildTSFIS(dataframe=dataframe, nr_clus=self.nr_clus, variable_names=variable_names,
-                                      process_categorical=process_categorical, merge_threshold=merge_threshold,
-                                      **kwargs)
-            if merge_threshold < 1.0:
+                self.FIS = BuildTSFIS(dataframe=dataframe, nr_clus=self.nr_clus, variable_names=variable_names, process_categorical=process_categorical, merge_threshold=merge_threshold, setnes_threshold=setnes_threshold, **kwargs)
+            if merge_threshold < 1.0 or setnes_threshold < 1.0:
                 self.dropped_fuzzy_sets = self.FIS._antecedent_estimator.get_number_of_dropped_fuzzy_sets()
         else:
             raise Exception("This modeling technique has not yet been implemented.")
