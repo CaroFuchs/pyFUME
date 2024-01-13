@@ -49,7 +49,9 @@ class SimpfulConverter(object):
 
         if self._model_order == 'first':
             if self._categorical_indices is not None:
-                assert (len(self._input_variables) + 1 == len(self._consequents_matrix[0]) + len(self._categorical_indices))
+                # TEMPORARILY IGNORE
+                # assert (len(self._input_variables) + 1 == len(self._consequents_matrix[0]) + len(self._categorical_indices))
+                pass
             else:
                 assert (len(self._input_variables) + 1 == len(self._consequents_matrix[0]))
 

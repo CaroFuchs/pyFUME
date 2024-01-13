@@ -17,8 +17,7 @@ class ConsequentEstimator(object):
 
     def __init__(self, x_train, y_train, firing_strengths, categorical_indices=None):
         self.x_train = copy.deepcopy(x_train)
-        if categorical_indices is not None:
-            self.x_train = np.delete(self.x_train, categorical_indices, axis=1)
+        self.categorical_indices = [] if categorical_indices is None else categorical_indices
         self.y_train = y_train
         self.firing_strengths = firing_strengths
 
@@ -61,6 +60,16 @@ class ConsequentEstimator(object):
         u = np.unique(x[:, -1])
         if u.shape[0] != 1 or u[0] != 1:
             x = np.hstack((x, np.ones((x.shape[0], 1))))
+
+        # ONE HOT ENCODE CATEGORICAL VARIABLES
+        one_hots = []
+        for cidx in self.categorical_indices:
+            # categorical variables are expected to be INTEGERS in the range 0,...,n
+            col = x[:, cidx].astype(np.uint32)
+            one_hot = np.zeros((x.shape[0], col.max() + 1))
+            one_hot[np.arange(x.shape[0]), col] = 1
+            one_hots.append(one_hot[:, 1:])
+        x = np.c_[x, *one_hots]
 
         # Find the number of data points (mx & mf) , the number of variables (nx) and the
         # number of clusters (nf) 
