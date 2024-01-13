@@ -69,6 +69,7 @@ class ConsequentEstimator(object):
             one_hot = np.zeros((x.shape[0], col.max() + 1))
             one_hot[np.arange(x.shape[0]), col] = 1
             one_hots.append(one_hot[:, 1:])
+        np.delete(x, self.categorical_indices, axis=1)
         x = np.c_[x, *one_hots]
 
         # Find the number of data points (mx & mf) , the number of variables (nx) and the
