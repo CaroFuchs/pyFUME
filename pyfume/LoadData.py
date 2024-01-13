@@ -22,7 +22,9 @@ class DataLoader(object):
     """
 
     def __init__(self, datapath=None, dataframe=None, process_categorical=False,
-                 variable_names=None, normalize=False, delimiter=',', verbose=True, log_variables=None):
+                 variable_names=None, normalize=False, delimiter=',', verbose=True, log_variables=None,
+                 categorical_indices=None):
+
         # user specified a dataframe?
         if dataframe is not None:
 
@@ -97,6 +99,11 @@ class DataLoader(object):
                 raise TypeError(
                     "Please specify valid variable indices (as int) or variable names (as strings) for variables to log transform.")
 
+        # BACKUP CATEGORICAL VARIABLES
+        if categorical_indices is None:
+            categorical_indices = []
+        categorical_cols = self.dataX[:, categorical_indices]
+
         if normalize == 'minmax' or normalize == 'linear' or normalize is True:
             if verbose: print('The data is normalized using min-max normalization.')
             self.raw_dataX = self.dataX.copy()
@@ -107,9 +114,16 @@ class DataLoader(object):
 
             self.dataX = (self.dataX - self.dataX.min(axis=0)) / (self.dataX.max(axis=0) - self.dataX.min(axis=0))
 
+            # RESTORE CATEGORICAL VARIABLES
+            self.dataX[:, categorical_indices] = categorical_cols
+
+
         elif normalize == 'zscore':
             if verbose: print('The data is normalized using z-score normalization.')
             self.dataX = (self.dataX - self.dataX.mean(axis=0)) / self.dataX.std(axis=0)
+
+            # RESTORE CATEGORICAL VARIABLES
+            self.dataX[:, categorical_indices] = categorical_cols
         else:
             if verbose: print('The data will not be normalized.')
 
