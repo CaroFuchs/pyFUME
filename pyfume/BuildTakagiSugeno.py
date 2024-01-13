@@ -29,7 +29,7 @@ class BuildTSFIS(object):
             An object containing the fuzzy model, information about its setting (such as its antecedent and consequent parameters) and the different splits of the data.
     """
     def __init__(self, datapath=None, dataframe=None, nr_clus=None, variable_names=None, 
-            process_categorical=False, merge_threshold=1.0, setnes_threshold=1.0, verbose = False, **kwargs):
+            process_categorical=False, merge_threshold=1.0, setnes_threshold=1.0, verbose=False, **kwargs):
 
         self.datapath = datapath
         self.nr_clus = nr_clus
@@ -79,9 +79,9 @@ class BuildTSFIS(object):
 
         # Load the data
         if self.datapath is None:
-            dl = DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables=kwargs['log_variables'], verbose=self.verbose)
+            dl = DataLoader(dataframe=dataframe, normalize=kwargs['normalize'], process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables=kwargs['log_variables'], categorical_indices=kwargs['categorical_indices'], verbose=self.verbose)
         else:
-            dl = DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables=kwargs['log_variables'], verbose=self.verbose)
+            dl = DataLoader(self.datapath, normalize=kwargs['normalize'],  process_categorical=process_categorical, delimiter=kwargs['data_delimiter'], log_variables=kwargs['log_variables'], categorical_indices=kwargs['categorical_indices'], verbose=self.verbose)
         self.variable_names = dl.get_variable_names()
 
         if kwargs['normalize'] is not False and kwargs['normalize'] != 'zscore':
