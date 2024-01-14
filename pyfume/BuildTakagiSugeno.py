@@ -253,7 +253,7 @@ class BuildTSFIS(object):
                 tst_idx=self.fold_indices[fold_number]
                 tst_idx = tst_idx[~np.isnan(tst_idx)]
                 tst_idx = [int(x) for x in tst_idx]
-                np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+                #np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
                 trn_idx=np.concatenate(np.delete(self.fold_indices, fold_number, axis=0))
                 trn_idx = trn_idx[~np.isnan(trn_idx)]
                 trn_idx = [int(x) for x in trn_idx]
