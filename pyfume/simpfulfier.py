@@ -25,7 +25,7 @@ class SimpfulConverter(object):
                  fuzzy_sets,
                  model_order='first',
                  fuzzy_sets_to_drop=None,
-                 setnes_dropped_antecedents = None,
+                 setnes_dropped_antecedents=None,
                  extreme_values=None,
                  operators=None,
                  verbose=False,
@@ -42,7 +42,7 @@ class SimpfulConverter(object):
         self.verbose = verbose
         if self._fuzzy_sets_to_drop is None:
             self._fuzzy_sets_to_drop = {}
-        self._categorical_indices = categorical_indices
+        self._categorical_indices = categorical_indices if categorical_indices is not None else []
 
         if self._setnes_dropped_antecedents is None:
             self._setnes_dropped_antecedents = {}
@@ -145,11 +145,10 @@ class SimpfulConverter(object):
 
                 try:
                     if cluster in self._setnes_dropped_antecedents[num_var]:
-                        print(" * Dropping cluster%d from variable %s due to Setnes' method." %(cluster, var) )
-                        chunk+="# "
+                        print(" * Dropping cluster%d from variable %s due to Setnes' method." % (cluster, var))
+                        chunk += "# "
                 except KeyError:
                     pass
-
 
                 # if self.verbose: print (" * Creating fuzzy set for variable %s, cluster%d" % (var, cluster+1))
 
@@ -162,7 +161,7 @@ class SimpfulConverter(object):
 
                 elif fstype == 'gauss2':
                     chunk += "function=DoubleGaussian_MF(%f, %f, %f, %f), term='%s')" % (
-                    params[0], params[1], params[2], params[3], term)
+                        params[0], params[1], params[2], params[3], term)
 
                 elif fstype == 'sigmoid':
                     chunk += "function=Sigmoid_MF(%f, %f), term='%s')" % (params[0], params[1], term)
@@ -179,10 +178,10 @@ class SimpfulConverter(object):
                 # first check GRABS
                 if (num_var, cluster) not in self._fuzzy_sets_to_drop:
                     # also check Setnes
-                        res_setnets = self._setnes_dropped_antecedents.get(num_var, [])
-                        if cluster not in res_setnets:
-                            # finally can append
-                            subchunk.append("FS_%d" % (j + 1))
+                    res_setnets = self._setnes_dropped_antecedents.get(num_var, [])
+                    if cluster not in res_setnets:
+                        # finally can append
+                        subchunk.append("FS_%d" % (j + 1))
                 # print ( self._fuzzy_sets[j] )
                 j += 1
                 chunk += "\n"
@@ -191,23 +190,30 @@ class SimpfulConverter(object):
                 chunk += "MF_%s = LinguisticVariable([%s], concept='%s')\n" % (var, ", ".join(subchunk), var)
             else:
                 chunk += "MF_%s = LinguisticVariable([%s], concept='%s' , universe_of_discourse=%s)\n" % (
-                var, ", ".join(subchunk), var, self._extreme_values[num_var])
+                    var, ", ".join(subchunk), var, self._extreme_values[num_var])
             chunk += "FS.add_linguistic_variable('%s', MF_%s)\n\n" % (var, var)
 
         return chunk
 
     def _create_consequents(self):
+        variable_count = [  # number of columns in the consequent matrix, for each variable
+            len(self._fuzzy_sets[self._clusters * i][1]) - 1
+            if i in self._categorical_indices else 1
+            for i in range(len(self._input_variables))
+        ]
         result = []
-        if self._categorical_indices is not None:
-            # row[-1] contains the continuous variable, if categorical indices are used there are problems in the
-            # lengths of the lists to write the consequents, in this way they should be fixed
-            continuous_variables = [v for idx, v in enumerate(self._input_variables) if idx not in self._categorical_indices]
-        else:
-            continuous_variables = copy.deepcopy(self._input_variables)
         for row in self._consequents_matrix:
-            result.append(
-                ("+".join(["%e*%s" % (value, name) for (name, value) in zip(continuous_variables, row[:-1])])))
-            result[-1] += "+%e" % row[-1]
+            function = f'{row[-1]}'
+            j = 0
+            for i, v in enumerate(self._input_variables):
+                if i in self._categorical_indices:
+                    for k in range(variable_count[i]):
+                        function += f'+{{IF {v} IS {str(int(k))} THEN {row[j]}}}'
+                        j += 1
+                else:
+                    function += f'+{row[j]}*{v}'
+                    j += 1
+            result.append(function)
         return result
 
     def _create_antecedents(self):
@@ -225,9 +231,9 @@ class SimpfulConverter(object):
                 # SETNES
                 try:
                     if i in self._setnes_dropped_antecedents[j]:
-                    #if (j,i) in self._setnes_dropped_antecedents:
-                        print(" * Dropping cluster%d from variable %s in antecedent due to Setnes' method." %(i, var) )
-                        continue # experimental
+                        # if (j,i) in self._setnes_dropped_antecedents:
+                        print(" * Dropping cluster%d from variable %s in antecedent due to Setnes' method." % (i, var))
+                        continue  # experimental
                 except KeyError:
                     pass
 

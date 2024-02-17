@@ -103,6 +103,7 @@ class DataLoader(object):
         if categorical_indices is None:
             categorical_indices = []
         categorical_cols = self.dataX[:, categorical_indices]
+        print(f' * Detected {len(categorical_indices)} categorical variables.')
 
         if normalize == 'minmax' or normalize == 'linear' or normalize is True:
             if verbose: print('The data is normalized using min-max normalization.')

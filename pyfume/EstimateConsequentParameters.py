@@ -56,21 +56,23 @@ class ConsequentEstimator(object):
         y = self.y_train.copy()
         f = self.firing_strengths.copy()
 
+        # ONE HOT ENCODE CATEGORICAL VARIABLES
+        slices = []
+        for i in range(x.shape[1]):
+            if i in self.categorical_indices:
+                # categorical variables are expected to be INTEGERS in the range 0,...,n
+                col = x[:, i].astype(np.uint32)
+                one_hot = np.zeros((x.shape[0], col.max() + 1))
+                one_hot[np.arange(x.shape[0]), col] = 1
+                slices.append(one_hot[:, :-1])
+            else:
+                slices.append(x[:, i].reshape(-1, 1))
+        x = np.c_[*slices]
+
         # Check if input X contains one column of ones (for the constant). If not, add it.
         u = np.unique(x[:, -1])
         if u.shape[0] != 1 or u[0] != 1:
             x = np.hstack((x, np.ones((x.shape[0], 1))))
-
-        # ONE HOT ENCODE CATEGORICAL VARIABLES
-        one_hots = []
-        for cidx in self.categorical_indices:
-            # categorical variables are expected to be INTEGERS in the range 0,...,n
-            col = x[:, cidx].astype(np.uint32)
-            one_hot = np.zeros((x.shape[0], col.max() + 1))
-            one_hot[np.arange(x.shape[0]), col] = 1
-            one_hots.append(one_hot[:, 1:])
-        np.delete(x, self.categorical_indices, axis=1)
-        x = np.c_[x, *one_hots]
 
         # Find the number of data points (mx & mf) , the number of variables (nx) and the
         # number of clusters (nf) 

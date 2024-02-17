@@ -19,13 +19,14 @@ class SugenoFISTester(object):
             the output names used in the model) (default: OUTPUT).
     """
 
-    def __init__(self, model, test_data, variable_names, golden_standard=None, list_of_outputs=['OUTPUT']):
+    def __init__(self, model, test_data, variable_names, golden_standard=None, list_of_outputs=['OUTPUT'], categorical_indices=None):
         super().__init__()
         self._model_to_test = model
         self._data_to_test = test_data
         self._golden_standard = golden_standard
         self._variable_names = variable_names
         self._list_of_outputs = list_of_outputs
+        self._categorical_indices = categorical_indices if categorical_indices is not None else []
 
     def predict(self):
         """
@@ -39,8 +40,11 @@ class SugenoFISTester(object):
         result = []
         for sample in self._data_to_test:
             for i, variable in enumerate(self._variable_names):
-                self._model_to_test.set_variable(variable, sample[i])
-            result.append(self._model_to_test.Sugeno_inference().get('OUTPUT'))
+                if i in self._categorical_indices:
+                    self._model_to_test.set_variable(variable, str(int(sample[i])))
+                else:
+                    self._model_to_test.set_variable(variable, sample[i])
+            result.append(self._model_to_test.Sugeno_inference(ignore_warnings=True).get('OUTPUT'))
         result = np.array(result)
         if self._golden_standard is not None:
             error = self._golden_standard - result
