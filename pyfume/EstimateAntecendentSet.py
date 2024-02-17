@@ -70,8 +70,8 @@ class AntecedentEstimator(object):
                     for k, n in counter.items():
                         freq = n / total_number
                         tmp_dict[k] = freq
-                        cluster_frequencies[j] = tmp_dict
                         value_frequencies[k].append(freq)
+                    cluster_frequencies[j] = tmp_dict
                 # Force sum to 1 for each value of the categorical feature
                 # Computing the total sum for each value
                 total_sums = {k: sum(value_frequencies[k]) for k in unique_values}
