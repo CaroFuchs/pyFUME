@@ -41,7 +41,7 @@ class SugenoFISTester(object):
         for sample in self._data_to_test:
             for i, variable in enumerate(self._variable_names):
                 if i in self._categorical_indices:
-                    self._model_to_test.set_variable(variable, str(int(sample[i])))
+                    self._model_to_test.set_variable(variable, sample[i])
                 else:
                     self._model_to_test.set_variable(variable, sample[i])
             result.append(self._model_to_test.Sugeno_inference(ignore_warnings=True).get('OUTPUT'))

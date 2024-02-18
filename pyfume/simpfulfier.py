@@ -208,7 +208,7 @@ class SimpfulConverter(object):
             for i, v in enumerate(self._input_variables):
                 if i in self._categorical_indices:
                     for k in range(variable_count[i]):
-                        function += f'+{{IF {v} IS {str(int(k))} THEN {row[j]}}}'
+                        function += f'+{{IF {v} IS {k} THEN {row[j]}}}'
                         j += 1
                 else:
                     function += f'+{row[j]}*{v}'
