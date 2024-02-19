@@ -30,7 +30,7 @@ class AntecedentEstimator(object):
         self._calculate_all_extreme_values()
         self._setnes_removed_sets = defaultdict(list)
 
-    def determineMF(self, mf_shape='gauss', merge_threshold=1.0, categorical_indices=None, setnes_threshold=1.0):
+    def determineMF(self, mf_shape='gauss', merge_threshold=1.0, categorical_indices=None, setnes_threshold=1.0, global_singleton=None):
         """
             Estimates the parameters of the membership functions that are used 
             as antecedents of the fuzzy rules.
@@ -53,37 +53,52 @@ class AntecedentEstimator(object):
         number_of_variables = self.xtrain.shape[1]
         for i in range(0, number_of_variables):
             if categorical_indices is not None and i in categorical_indices:
-                xin = self.xtrain[:, i]
-                cluster_frequencies_counter = [[] for _ in range(0, self.partition_matrix.shape[1])]
-                unique_values = set()
-                for j in range(0, self.partition_matrix.shape[0]):
-                    cl = np.argmax(self.partition_matrix[j, :])  # Determine the cluster the instance belongs to the most
-                    unique_values.add(xin[j])
-                    cluster_frequencies_counter[cl].append(xin[j])
-                cluster_frequencies = {}
-                value_frequencies = {k: [] for k in unique_values}  # used to force the sum for each variable to 1
-                for j, clf in enumerate(cluster_frequencies_counter):
-                    total_number = len(clf)
-                    counter = Counter(clf)
-                    # k is the element of the universe of discourse and n / total_number is the membership function
-                    tmp_dict = {}
-                    for k, n in counter.items():
-                        freq = n / total_number
-                        tmp_dict[k] = freq
-                        value_frequencies[k].append(freq)
-                    cluster_frequencies[j] = tmp_dict
-                # Force sum to 1 for each value of the categorical feature
-                # Computing the total sum for each value
-                total_sums = {k: sum(value_frequencies[k]) for k in unique_values}
-                for j in cluster_frequencies:
-                    mfs = []
-                    for k in unique_values:
-                        if k in cluster_frequencies[j]:
-                            mfs.append((k, cluster_frequencies[j][k] / total_sums[k]))
-                        else:
-                            mfs.append((k, 0.0))
-                    prm = ('singleton', mfs)
-                    mf_list.append(prm)
+                if global_singleton is not None:
+                    unique_values = np.unique(self.xtrain[:, i])
+                    if global_singleton == 'softmax':
+                        from scipy.special import softmax
+                        pm = softmax(self.partition_matrix, axis=0)
+                    else:
+                        pm = self.partition_matrix
+                    pml = []
+                    for uv in unique_values:
+                        pmn = pm[self.xtrain[:, i] == uv].sum(axis=0)
+                        pml.append(list(pmn / pmn.sum()))
+                    sets = list(zip(*pml))
+                    for s in sets:
+                        mf_list.append(('singleton', list(zip(unique_values, s))))
+                else:
+                    xin = self.xtrain[:, i]
+                    cluster_frequencies_counter = [[] for _ in range(0, self.partition_matrix.shape[1])]
+                    unique_values = set()
+                    for j in range(0, self.partition_matrix.shape[0]):
+                        cl = np.argmax(self.partition_matrix[j, :])  # Determine the cluster the instance belongs to the most
+                        unique_values.add(xin[j])
+                        cluster_frequencies_counter[cl].append(xin[j])
+                    cluster_frequencies = {}
+                    value_frequencies = {k: [] for k in unique_values}  # used to force the sum for each variable to 1
+                    for j, clf in enumerate(cluster_frequencies_counter):
+                        total_number = len(clf)
+                        counter = Counter(clf)
+                        # k is the element of the universe of discourse and n / total_number is the membership function
+                        tmp_dict = {}
+                        for k, n in counter.items():
+                            freq = n / total_number
+                            tmp_dict[k] = freq
+                            value_frequencies[k].append(freq)
+                        cluster_frequencies[j] = tmp_dict
+                    # Force sum to 1 for each value of the categorical feature
+                    # Computing the total sum for each value
+                    total_sums = {k: sum(value_frequencies[k]) for k in unique_values}
+                    for j in cluster_frequencies:
+                        mfs = []
+                        for k in unique_values:
+                            if k in cluster_frequencies[j]:
+                                mfs.append((k, cluster_frequencies[j][k] / total_sums[k]))
+                            else:
+                                mfs.append((k, 0.0))
+                        prm = ('singleton', mfs)
+                        mf_list.append(prm)
             else:
                 xin = self.xtrain[:, i]
                 if all(y in (0, 1) for y in xin):  # Add noise to binary variables
@@ -358,7 +373,7 @@ class AntecedentEstimator(object):
             #            print('mu1',mu1,'sig1',sig1,'mu2',mu2,'sig2',sig2)
             param, _ = curve_fit(self._gauss2mf, x, mf, p0=[mu1, sig1, mu2, sig2], maxfev=1000,
                                  bounds=((-np.inf, 0, -np.inf, 0), (np.inf, np.inf, np.inf, np.inf)))
-            
+
         elif mf_shape == 'sigmf':
             # Determine initial parameters
             if np.argmax(mf) - np.argmin(mf) > 0:  # if sloping to the right
