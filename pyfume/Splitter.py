@@ -1,19 +1,22 @@
 import numpy as np
 import random
 
+
 class DataSplitter(object):
     """
         Creates an object that can (provide the indices to) split the data in a 
             training and test for model validation.
     """
-    
-#    def __init__(self):#, dataX, dataY):
-#        self.data=np.loadtxt(datapath,delimiter=',')
-#        self.dataX=self.data[:,0:-1]
-#        self.dataY=self.data[:,-1]
-#        self.dataX=dataX
-#        self.dataY=dataY
-        
+
+    def __init__(self, seed=None):
+        random.seed(seed)
+    #    def __init__(self):#, dataX, dataY):
+    #        self.data=np.loadtxt(datapath,delimiter=',')
+    #        self.dataX=self.data[:,0:-1]
+    #        self.dataY=self.data[:,-1]
+    #        self.dataX=dataX
+    #        self.dataY=dataY
+
     def holdout(self, dataX, dataY, percentage_training=0.75):
         """
             Splits the data in a training and test set using the hold-out method.
@@ -32,16 +35,16 @@ class DataSplitter(object):
                         - x_test: Input variables of the test data.
                         - y_test: Output variables (true label/golden standard) of the test data.
         """
-        
-        universe=set(range(0,np.shape(dataX)[0]))
-        trn=np.random.choice(dataX.shape[0], int(round(percentage_training*dataX.shape[0])), replace=False)
-        tst=list(universe-set(trn))
 
-        x_train=dataX[trn]
-        x_test=dataX[tst]
-        y_train=dataY[trn]
-        y_test=dataY[tst]
-    
+        universe = set(range(0, np.shape(dataX)[0]))
+        trn = np.random.choice(dataX.shape[0], int(round(percentage_training * dataX.shape[0])), replace=False)
+        tst = list(universe - set(trn))
+
+        x_train = dataX[trn]
+        x_test = dataX[tst]
+        y_train = dataY[trn]
+        y_test = dataY[tst]
+
         return x_train, y_train, x_test, y_test
 
     def kfold(self, data_length, number_of_folds=10):
@@ -58,12 +61,10 @@ class DataSplitter(object):
             Returns:
                 A list with k (non-overlapping) sublists each containing the indices for one fold.
         """
-        
-        idx=np.arange(0, data_length)
+
+        idx = np.arange(0, data_length)
         random.shuffle(idx)
-         
-        fold_indices= np.array_split(idx,number_of_folds)
-        
+
+        fold_indices = np.array_split(idx, number_of_folds)
+
         return fold_indices
-    
-        

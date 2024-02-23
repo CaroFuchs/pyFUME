@@ -18,15 +18,16 @@ class SugenoFISTester(object):
         list_of_outputs: List of the output names (which should correspond with 
             the output names used in the model) (default: OUTPUT).
     """
-    
-    def __init__(self, model, test_data, variable_names, golden_standard=None, list_of_outputs=['OUTPUT']):
+
+    def __init__(self, model, test_data, variable_names, golden_standard=None, list_of_outputs=['OUTPUT'], categorical_indices=None):
         super().__init__()
         self._model_to_test = model
         self._data_to_test = test_data
         self._golden_standard = golden_standard
         self._variable_names = variable_names
-        self._list_of_outputs=list_of_outputs
-        
+        self._list_of_outputs = list_of_outputs
+        self._categorical_indices = categorical_indices if categorical_indices is not None else []
+
     def predict(self):
         """
         Calculates the predictions labels of the test data using the fuzzy model.
@@ -39,17 +40,20 @@ class SugenoFISTester(object):
         result = []
         for sample in self._data_to_test:
             for i, variable in enumerate(self._variable_names):
-                self._model_to_test.set_variable(variable, sample[i])
+                if i in self._categorical_indices:
+                    self._model_to_test.set_variable(variable, sample[i])
+                else:
+                    self._model_to_test.set_variable(variable, sample[i])
             result.append(self._model_to_test.Sugeno_inference().get('OUTPUT'))
         result = np.array(result)
-        if self._golden_standard is not  None:
+        if self._golden_standard is not None:
             error = self._golden_standard - result
         else:
             error = np.nan
             # print('The true labels (golden standard) were not provided, so the error could not be calculated.')
         return result, error
-    
-    def calculate_performance(self, metric='MAE'):  
+
+    def calculate_performance(self, metric='MAE'):
         """
         Calculates the performance of the model given the test data.
 
@@ -60,24 +64,24 @@ class SugenoFISTester(object):
         
         Returns:
             The performance as expressed by the chosen performance metric.
-        """      
+        """
         if metric == 'MAE':
-            err=self.calculate_MAE()
+            err = self.calculate_MAE()
         elif metric == 'MSE':
-            err=self.calculate_MSE()
+            err = self.calculate_MSE()
         elif metric == 'RMSE':
-            err=self.calculate_RMSE()        
+            err = self.calculate_RMSE()
         elif metric == 'MAPE':
-            err=self.calculate_MAPE()
+            err = self.calculate_MAPE()
         elif metric == 'accuracy':
-            err=self.calculate_accuracy()
+            err = self.calculate_accuracy()
         elif metric == 'AUC':
-            err=self.calculate_AUC()
+            err = self.calculate_AUC()
         else:
             print('The requested performance metric has not been implemented (yet).')
-            
+
         return err
-    
+
     def calculate_RMSE(self):
         """
         Calculates the Root Mean Squared Error of the model given the test data.
@@ -85,10 +89,9 @@ class SugenoFISTester(object):
         Returns:
             The Root Mean Squared Error of the fuzzy model.
         """
-        _, error=self.predict()
+        _, error = self.predict()
         return sqrt(np.mean(np.square(error)))
-    
-    
+
     def calculate_MSE(self):
         """
         Calculates the Mean Squared Error of the model given the test data.
@@ -96,9 +99,9 @@ class SugenoFISTester(object):
         Returns:
             The Mean Squared Error of the fuzzy model.
         """
-        _, error=self.predict()
-        return np.mean(np.square(error))   
-    
+        _, error = self.predict()
+        return np.mean(np.square(error))
+
     def calculate_MAE(self):
         """
         Calculates the Mean Absolute Error of the model given the test data.
@@ -106,9 +109,9 @@ class SugenoFISTester(object):
         Returns:
             The Mean Absolute Error of the fuzzy model.
         """
-        _, error=self.predict()
+        _, error = self.predict()
         return np.mean(np.abs(error))
-    
+
     def calculate_MAPE(self):
         """
         Calculates the Mean Absolute Percentage Error of the model given the test data.
@@ -116,14 +119,14 @@ class SugenoFISTester(object):
         Returns:
             The Mean Absolute Percentage Error of the fuzzy model.
         """
-        
+
         if self._golden_standard is None:
-             raise Exception('To compute the MAPE the true label (golden standard) of the test data should be provided.')
-        
-        _, error=self.predict()
+            raise Exception('To compute the MAPE the true label (golden standard) of the test data should be provided.')
+
+        _, error = self.predict()
         return np.mean(np.abs((error) / self._golden_standard)) * 100
-    
-    def calculate_accuracy(self, threshold = 0.5):
+
+    def calculate_accuracy(self, threshold=0.5):
         """
         Calculates the accuracy of the model for binary problems, given the test data and a discretization threshold .
         
@@ -132,12 +135,14 @@ class SugenoFISTester(object):
         Returns:
             The accuracy of the fuzzy model.
         """
-        
-        confusion_matrix= self.generate_confusion_matrix(threshold=threshold)
-        acc = round((confusion_matrix['TP']+confusion_matrix['TN'])/(confusion_matrix['TP']+confusion_matrix['TN']+confusion_matrix['FP']+confusion_matrix['FN']),3)
+
+        confusion_matrix = self.generate_confusion_matrix(threshold=threshold)
+        acc = round((confusion_matrix['TP'] + confusion_matrix['TN']) / (
+                    confusion_matrix['TP'] + confusion_matrix['TN'] + confusion_matrix['FP'] + confusion_matrix['FN']),
+                    3)
         return acc
-    
-    def generate_confusion_matrix(self, threshold = 0.5):
+
+    def generate_confusion_matrix(self, threshold=0.5):
         """
         Calculates the confusion matrix for binary output data.
         
@@ -149,24 +154,25 @@ class SugenoFISTester(object):
         """
         # Check if golden standard is present
         if self._golden_standard is None:
-            raise Exception('To calculate the confusion matrix, the true label (golden standard) of the test data should be provided.') 
-        
-        # Get the predicted values for the test data
-        ypred, _ =self.predict()
-        
+            raise Exception(
+                'To calculate the confusion matrix, the true label (golden standard) of the test data should be provided.')
+
+            # Get the predicted values for the test data
+        ypred, _ = self.predict()
+
         # discretize ypred using a user-specified thresehold
-        discrete_ypred = np.digitize(ypred,bins=[threshold])
-        
+        discrete_ypred = np.digitize(ypred, bins=[threshold])
+
         # Create the confusion matrix as a dictionary
         confusion_matrix = dict()
-        
+
         confusion_matrix['TP'] = np.sum(np.logical_and(discrete_ypred == 1, self._golden_standard == 1))
         confusion_matrix['TN'] = np.sum(np.logical_and(discrete_ypred == 0, self._golden_standard == 0))
         confusion_matrix['FP'] = np.sum(np.logical_and(discrete_ypred == 1, self._golden_standard == 0))
         confusion_matrix['FN'] = np.sum(np.logical_and(discrete_ypred == 0, self._golden_standard == 1))
         return confusion_matrix
-    
-    def calculate_AUC(self, number_of_slices=25, show_plot = False):
+
+    def calculate_AUC(self, number_of_slices=25, show_plot=False):
         """
         Calculates the area under the ROC curve (AUC) for models with binary output data.
         
@@ -176,33 +182,31 @@ class SugenoFISTester(object):
         Returns:
             AUC.
         """
-        
+
         ROC = np.array([])
-        for T in np.linspace(0,1,number_of_slices):
-            con_mat = self.generate_confusion_matrix(threshold = T) 
+        for T in np.linspace(0, 1, number_of_slices):
+            con_mat = self.generate_confusion_matrix(threshold=T)
             TPR = self.calculate_TPR(con_mat)
             FPR = self.calculate_FPR(con_mat)
-            ROC=np.append(ROC, [FPR,TPR])
+            ROC = np.append(ROC, [FPR, TPR])
         ROC = ROC.reshape(-1, 2)
-        
+
         fpr, tpr = ROC[:, 0], ROC[:, 1]
         AUC = 0
-        for k in range(0,number_of_slices-1):
-            AUC = AUC + ((fpr[k]-fpr[k+1]) * tpr[k+1]) + ((1/2) * (fpr[k]- fpr[k+1]) * (tpr[k]- tpr[k+1]))
-        
+        for k in range(0, number_of_slices - 1):
+            AUC = AUC + ((fpr[k] - fpr[k + 1]) * tpr[k + 1]) + ((1 / 2) * (fpr[k] - fpr[k + 1]) * (tpr[k] - tpr[k + 1]))
+
         if show_plot:
-            import matplotlib.pyplot as plt 
-            plt.figure(figsize=(16,8))
-            plt.scatter(ROC[:,0],ROC[:,1],s=100)
-            plt.plot([0, 1], [0, 1], ls = '--', c = 'darkgrey')
-            plt.title('ROC Curve with AUC = %.2f' %AUC)
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(16, 8))
+            plt.scatter(ROC[:, 0], ROC[:, 1], s=100)
+            plt.plot([0, 1], [0, 1], ls='--', c='darkgrey')
+            plt.title('ROC Curve with AUC = %.2f' % AUC)
             plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate')        
-        
+            plt.ylabel('True Positive Rate')
+
         return AUC
-                
-        
-        
+
     def calculate_TPR(self, confusion_matrix):
         """
         Calculates the true positive rate, given the confusion matrix for binary output data.
@@ -214,7 +218,7 @@ class SugenoFISTester(object):
             True positive rate.
         """
         return confusion_matrix['TP'] / (confusion_matrix['TP'] + confusion_matrix['FN'])
-        
+
     def calculate_FPR(self, confusion_matrix):
         """
         Calculates the false positive rate, given the confusion matrix for binary output data.
@@ -226,6 +230,3 @@ class SugenoFISTester(object):
             False positive rate.
         """
         return confusion_matrix['FP'] / (confusion_matrix['FP'] + confusion_matrix['TN'])
-    
-    
-    
