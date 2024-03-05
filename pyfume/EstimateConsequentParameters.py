@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from scipy.optimize import curve_fit
 import numpy.matlib
-
+from typing_extensions import Unpack
 
 class ConsequentEstimator(object):
     """
@@ -67,7 +67,8 @@ class ConsequentEstimator(object):
                 slices.append(one_hot[:, :-1])
             else:
                 slices.append(x[:, i].reshape(-1, 1))
-        x = np.c_[*slices]
+        # x = np.c_[*slices] 
+        x = np.c_[Unpack[slices]]
 
         # Check if input X contains one column of ones (for the constant). If not, add it.
         u = np.unique(x[:, -1])
