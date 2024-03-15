@@ -26,8 +26,19 @@ class FireStrengthCalculator(object):
         if 'operators' not in kwargs.keys(): kwargs['operators'] = None
 
         # Build a first-order Takagi-Sugeno model using Simpful using dummy consequent parameters
-        categorical_indices = kwargs['categorical_indices'] if kwargs['categorical_indices'] is not None else []
-        categorical_extra_rows = sum(len(antecedent_parameters[nr_clus * i][1]) - 2 for i in categorical_indices)
+        # categorical_indices = kwargs['categorical_indices'] if kwargs['categorical_indices'] is not None else []
+        
+        if "categorical_indices" in kwargs.keys():
+            categorical_indices = kwargs['categorical_indices']
+            if categorical_indices is not None:
+                categorical_extra_rows = sum(len(antecedent_parameters[nr_clus * i][1]) - 2 for i in categorical_indices)
+            else:
+                categorical_indices = []
+                categorical_extra_rows = 0
+        else:
+            categorical_indices = []
+            categorical_extra_rows = 0
+
         simpbuilder = SugenoFISBuilder(
             self.antecedent_parameters,
             np.tile(1, (self.nr_clus, len(self.variable_names) + 1 + categorical_extra_rows)),
@@ -37,7 +48,7 @@ class FireStrengthCalculator(object):
             save_simpful_code=False,
             fuzzy_sets_to_drop=self.what_to_drop,
             verbose=False,
-            categorical_indices=kwargs['categorical_indices']
+            categorical_indices=categorical_indices
         )
 
         self.dummymodel = simpbuilder.simpfulmodel

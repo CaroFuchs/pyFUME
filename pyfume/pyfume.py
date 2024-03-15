@@ -38,7 +38,7 @@ class pyFUME(object):
         variable_names=None,
         merge_threshold=1.,
         remove_flat_threshold=None,
-        setnes_threshold=0.8,
+        setnes_threshold=0.9,
         **kwargs):
       
         if datapath is None and dataframe is None:
@@ -56,7 +56,11 @@ class pyFUME(object):
 
         if method == 'Takagi-Sugeno' or method == 'Sugeno':
             if datapath is not None:
-                self.FIS = BuildTSFIS(datapath=self.datapath, nr_clus=self.nr_clus, variable_names=variable_names, process_categorical=process_categorical, merge_threshold=merge_threshold, setnes_threshold=setnes_threshold, **kwargs)
+                self.FIS = BuildTSFIS(datapath=self.datapath, 
+                    nr_clus=self.nr_clus, variable_names=variable_names, 
+                    process_categorical=process_categorical, 
+                    merge_threshold=merge_threshold, 
+                    setnes_threshold=setnes_threshold, **kwargs)
             else:
                 self.FIS = BuildTSFIS(dataframe=dataframe, nr_clus=self.nr_clus, variable_names=variable_names, process_categorical=process_categorical, merge_threshold=merge_threshold, setnes_threshold=setnes_threshold, **kwargs)
             if merge_threshold < 1.0 or setnes_threshold < 1.0:
