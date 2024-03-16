@@ -67,8 +67,16 @@ class ConsequentEstimator(object):
                 slices.append(one_hot[:, :-1])
             else:
                 slices.append(x[:, i].reshape(-1, 1))
-        # x = np.c_[*slices] 
-        x = np.c_[Unpack[slices]]
+        # x = np.c_[*slices]  ### Original
+        # slices = np.array(slices)
+
+
+        x = np.zeros([len(slices),len(slices[0])])
+        for m,sl in enumerate(slices):
+            for n,el in enumerate(sl):
+                x[m,n]=el
+        x = x.T
+        #x = np.c_[Unpack[slices]]
 
         # Check if input X contains one column of ones (for the constant). If not, add it.
         u = np.unique(x[:, -1])
@@ -141,7 +149,10 @@ class ConsequentEstimator(object):
                 w = f[:, i]
 
                 # Weight input with firing strength
-                xw = x * np.sqrt(w[:, np.newaxis])
+                #xw = x * np.sqrt(w[:, np.newaxis])
+                # patch for new python version
+                xw = np.array(x) * np.sqrt(np.array(w[:, np.newaxis]))
+                
 
                 # Weight output with firing strength
                 yw = y * np.sqrt(w)
