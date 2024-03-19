@@ -139,10 +139,7 @@ class ConsequentEstimator(object):
                 w = f[:, i]
 
                 # Weight input with firing strength
-                #xw = x * np.sqrt(w[:, np.newaxis])
-                # patch for new python version
-                xw = np.array(x) * np.sqrt(np.array(w[:, np.newaxis]))
-                
+                xw = x * np.sqrt(w[:, np.newaxis])
 
                 # Weight output with firing strength
                 yw = y * np.sqrt(w)
