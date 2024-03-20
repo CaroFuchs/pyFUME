@@ -18,5 +18,5 @@ setuptools.setup(
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.6',
-    install_requires=[ 'scipy', 'numpy', 'simpful', 'fst-pso', 'pandas', 'typing_extensions'],
+    install_requires=[ 'scipy', 'numpy', 'simpful', 'fst-pso', 'pandas' ],
 )
