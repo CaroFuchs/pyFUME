@@ -134,7 +134,9 @@ class BuildTSFIS(object):
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] is True:
-                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus = fs.fst_pso_feature_selection(max_iter=kwargs['fstpso_max_iter'], **kwargs)
+                    fst_pso_maxiter = 100
+                    if "fstpso_max_iter" in kwargs.keys(): fst_pso_maxiter = kwargs['fstpso_max_iter']
+                    self.selected_feature_indices, self.selected_variable_names, self.nr_clus = fs.fst_pso_feature_selection(max_iter=fst_pso_maxiter, **kwargs)
                 self.x_train = self.x_train[:, self.selected_feature_indices]
                 self.x_test = self.x_test[:, self.selected_feature_indices]
 
