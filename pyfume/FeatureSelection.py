@@ -466,9 +466,31 @@ class FeatureSelector(object):
                 
                 # Choose the indices for training and testing for this fold
                 tst_idx=fold_indices[fold_number]
-                np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
-                trn_idx=np.concatenate(np.delete(fold_indices, fold_number, axis=0))       # Use all indices, except the ones that are used for testing
+                #np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+
+                new_indices = []
+
+                for i in range(fs_number_of_folds):
+                    if i==fold_number:
+                        continue
+                    else:
+                        new_indices.extend(fold_indices[i])
                 
+                """
+                print(new_indices); exit()
+                print (fold_indices)
+                print (fold_number)
+                print (fold_indices[0])
+                mask = np.ones(len(fold_indices), dtype=bool)
+                mask[[fold_number]] = False
+                print(mask)
+                print (fold_indices[mask, ...])
+                exit()
+
+                trn_idx=np.concatenate(np.delete(fold_indices, fold_number, axis=0))       # Use all indices, except the ones that are used for testing
+                """
+                trn_idx = np.array(new_indices)
+
                 x_train = np.array([x_data[i,:] for i in trn_idx])
                 x_val = np.array([x_data[i,:] for i in tst_idx])                      
                 y_train = np.array([y_data[i] for i in trn_idx])
