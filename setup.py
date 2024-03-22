@@ -1,8 +1,8 @@
 import setuptools
 
 setuptools.setup(
-    name = 'pyFUME', 
-    version = '0.3.3',
+    name = 'pyFUME',
+    version = '0.3.4',
     author = 'Caro Fuchs',
     author_email = 'c.e.m.fuchs@tue.nl',
     description = 'A Python package for fuzzy model estimation',
@@ -17,6 +17,6 @@ setuptools.setup(
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',
-    install_requires=[ 'scipy', 'numpy', 'simpful', 'fst-pso', 'pandas' ],
+    python_requires='>=3.8',
+    install_requires=[ 'scipy==1.10.1', 'numpy==1.24.4', 'simpful==2.12.0', 'fst-pso==1.8.1', 'pandas==1.5.3' ],
 )

@@ -29,10 +29,11 @@ class SimpfulConverter(object):
                  extreme_values=None,
                  operators=None,
                  verbose=False,
-                 categorical_indices=None):
+                 categorical_indices=None,
+                 decimals = 6):
         super().__init__()
         self._input_variables = input_variables_names
-        self._consequents_matrix = consequents_matrix
+        self._consequents_matrix = consequents_matrix.round(decimals=decimals, out=None)
         self._clusters = len(self._consequents_matrix)
         self._fuzzy_sets = fuzzy_sets
         self._model_order = model_order

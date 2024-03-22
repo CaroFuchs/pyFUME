@@ -69,7 +69,7 @@ class DataLoader(object):
         else:
 
             if variable_names is None:
-                variable_names = np.genfromtxt(datapath, dtype='str', delimiter=delimiter, max_rows=1)
+                variable_names = np.genfromtxt(datapath, dtype='str', delimiter=delimiter, encoding = "utf_8_sig", max_rows=1)
                 if verbose is True:
                     print('The following variable names were detected from the input file: ', variable_names)
                 self.output_name = variable_names[-1]
@@ -77,7 +77,7 @@ class DataLoader(object):
                 self.data = np.genfromtxt(datapath, delimiter=delimiter, skip_header=1, filling_values=np.nan)
             else:
                 self.variable_names = variable_names
-                self.data = np.genfromtxt(datapath, delimiter=delimiter, filling_values=np.nan)
+                self.data = np.genfromtxt(datapath, delimiter=delimiter, filling_values=np.nan, encoding='utf-8-sig')
 
         self.dataX = self.data[:, 0:-1]
         self.dataY = self.data[:, -1]

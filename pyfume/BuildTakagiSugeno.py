@@ -130,7 +130,7 @@ class BuildTSFIS(object):
                 self.x_test_before_fs = self.x_test.copy()
 
                 if kwargs['feature_selection'] == 'wrapper' or kwargs['feature_selection'] == 'sfs' or kwargs['feature_selection'] == 'SFS':
-                    self.selected_feature_indices, self.variable_names = fs.wrapper()
+                    self.selected_feature_indices, self.selected_variable_names = fs.wrapper()
                 elif kwargs['feature_selection'] == 'logwrapper':
                     self.selected_feature_indices, self.selected_variable_names, self.log_indices, self.log_variable_names = fs.log_wrapper()
                 elif kwargs['feature_selection'] == 'fst-pso' or kwargs['feature_selection'] == 'fstpso' or kwargs['feature_selection'] == 'pso' or kwargs['feature_selection'] is True:

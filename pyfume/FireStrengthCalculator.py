@@ -38,7 +38,8 @@ class FireStrengthCalculator(object):
         else:
             categorical_indices = []
             categorical_extra_rows = 0
-
+         
+        print(self.variable_names) 
         simpbuilder = SugenoFISBuilder(
             self.antecedent_parameters,
             np.tile(1, (self.nr_clus, len(self.variable_names) + 1 + categorical_extra_rows)),
