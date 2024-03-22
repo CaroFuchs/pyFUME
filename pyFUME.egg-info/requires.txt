@@ -1,5 +1,0 @@
-scipy
-numpy
-simpful
-fst-pso
-pandas
